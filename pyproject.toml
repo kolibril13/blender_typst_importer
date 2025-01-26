@@ -1,15 +1,15 @@
 [project]
 name = "typst_importer"
-version = "0.0.1" # project is not on PyPI, so this is just a placeholder.The real version is defined in blender_manifest.toml
-description = "Blender extension to render typst files."
+version = "0.0.1"  # Placeholder; the real version is defined in blender_manifest.toml
+description = "Blender extension to render Typst files"
 license = { text = "AGPL-3.0-or-later" }
 readme = "README.md"
 dependencies = ["typst"]
-requires-python = "~=3.11.0"
+requires-python = ">=3.11.0,<3.12"
 keywords = ["blender", "python", "typst"]
 maintainers = [
-    {name="Jan-Hendrik Müller", email="jan-hendrik.mueller@uni-goettingen.de"},
-    ]
+    { name = "Jan-Hendrik Müller", email = "jan-hendrik.mueller@uni-goettingen.de" }
+]
 
 [project.urls]
 Homepage = "https://extensions.blender.org/add-ons/typst-importer/"
@@ -27,68 +27,4 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools>=61.0"]
 
 [tool.setuptools]
-packages = ["csv_importer"]
-
-
-####################
-# - Blender Extension
-####################
-[tool.blext]
-pretty_name = "Typst Importer"
-blender_version_min = '4.2.0'
-blender_version_max = '4.3.10'
-bl_tags = ["Development", "Import-Export", "Pipeline"]
-copyright = ["2025 typst_importer Contributors"]
-
-[tool.blext.permissions]
-
-# Platform Support
-## Map Valid Blender Platforms -> Required PyPi Platform Tags
-## Include as few PyPi tags as works on ~everything.
-[tool.blext.platforms]
-windows-amd64 = ['win_amd64']
-macos-arm64 = ['macosx_10_9_universal2', 'macosx_11_0_arm64', 'macosx_12_0_arm64', 'macosx_14_0_arm64', 'macosx_10_15_universal2']
-linux-x64 = ['manylinux1_x86_64', 'manylinux2014_x86_64', 'manylinux_2_17_x86_64', 'manylinux_2_28_x86_64']
-
-#macos-x86_64 = ['macosx_10_10_x86_64']  ##TODO: Broken
-
-# Packaging
-## Path is from the directory containing this file.
-[tool.blext.packaging]
-path_wheels = 'dev/wheels'
-init_settings_filename = 'init_settings.toml'
-
-
-# "Profiles" -> Affects Initialization Settings
-## This sets the default extension preferences for different situations.
-[tool.blext.profiles.test]
-use_path_local = true
-use_log_file = true
-log_file_path = 'typst_importer.log'
-log_file_level = 'DEBUG'
-use_log_console = true
-log_console_level = 'INFO'
-
-[tool.blext.profiles.dev]
-use_path_local = true
-use_log_file = true
-log_file_path = 'typst_importer.log'
-log_file_level = 'DEBUG'
-use_log_console = true
-log_console_level = 'INFO'
-
-[tool.blext.profiles.release]
-use_path_local = false
-use_log_file = true
-log_file_path = 'typst_importer.log'
-log_file_level = 'INFO'
-use_log_console = true
-log_console_level = 'WARNING'
-
-[tool.blext.profiles.release-debug]
-use_path_local = false
-use_log_file = true
-log_file_path = 'typst_importer.log'
-log_file_level = 'DEBUG'
-use_log_console = true
-log_console_level = 'WARNING'
+packages = ["typst_importer"]

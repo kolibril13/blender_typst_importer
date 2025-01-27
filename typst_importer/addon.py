@@ -10,7 +10,7 @@ CLASSES = ops.CLASSES + props.CLASSES + ui.CLASSES
 
 # Register the operator and menu entry
 def menu_func_import(self, context):
-    self.layout.operator(ImportCsvPolarsOperator.bl_idname, text="typst 🦢 (.typ)")
+    self.layout.operator(ImportCsvPolarsOperator.bl_idname, text="CSV 🐻 (.csv)")
 
 
 def register():

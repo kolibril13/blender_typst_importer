@@ -2,7 +2,7 @@ import bpy
 from bpy.props import StringProperty
 import time
 from bpy_extras.io_utils import ImportHelper
-from .typst import load_typst
+from .csv import load_csv
 from .parsers import update_obj_from_csv
 from pathlib import Path
 
@@ -21,23 +21,23 @@ class ImportCsvPolarsOperator(bpy.types.Operator, ImportHelper):
     # to use SKIP_SAVE, allowing drag-and-drop to work properly.
     filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})  # type: ignore
 
-    filename_ext = ".typ"
+    filename_ext = ".csv"
     filter_glob: StringProperty(  # type: ignore
-        default="*.typ",
+        default="*.csv",
         options={"HIDDEN"},
         maxlen=255,
     )
 
     def execute(self, context):
-        # Ensure the filepath is a typ file
+        # Ensure the filepath is a CSV file
 
-        if not self.filepath.lower().endswith(".typ"):
-            self.report({"WARNING"}, "Selected file is not a typ file")
+        if not self.filepath.lower().endswith(".csv"):
+            self.report({"WARNING"}, "Selected file is not a CSV")
             return {"CANCELLED"}
 
         start_time = time.perf_counter()
 
-        bob = load_typst(filepath=self.filepath)
+        bob = load_csv(filepath=self.filepath)
         bob.csv.filepath = self.filepath
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000

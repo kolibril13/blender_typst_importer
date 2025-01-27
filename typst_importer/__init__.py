@@ -1,2 +1,2 @@
 from .addon import register, unregister
-from .typst import load_typst
+from .csv import load_csv

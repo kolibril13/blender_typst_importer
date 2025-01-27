@@ -26,21 +26,19 @@ class CSV_PT_ObjectPanel(bpy.types.Panel):
         row = layout.row(align=True)
         col = row.column()
         op = col.operator("csv.reload_data")
-
         col.enabled = not obj.csv.hot_reload
         op.filepath = obj.csv.filepath
 
-        # disable hot-reload for now
-        # # if obj.csv.hot_reload and op._timer is not None:
-        # if obj.csv.hot_reload:
-        #     message = "Hot Reload"
-        #     icon = "PAUSE"
-        # else:
-        #     message = "Hot Reload"
-        #     icon = "PLAY"
-        # op = row.operator(
-        #     "csv.toggle_hot_reload", text=message, icon=icon, depress=obj.csv.hot_reload
-        # )
+        # if obj.csv.hot_reload and op._timer is not None:
+        if obj.csv.hot_reload:
+            message = "Hot Reload"
+            icon = "PAUSE"
+        else:
+            message = "Hot Reload"
+            icon = "PLAY"
+        op = row.operator(
+            "csv.toggle_hot_reload", text=message, icon=icon, depress=obj.csv.hot_reload
+        )
 
 
 CLASSES = (CSV_PT_ObjectPanel,)

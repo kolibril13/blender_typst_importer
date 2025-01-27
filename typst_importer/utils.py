@@ -1,4 +1,3 @@
-# this is 100% identical to utils.py in csv_importer https://github.com/kolibril13/blender_csv_import/blob/main/csv_importer/utils.py
 import os
 import sys
 import numpy as np

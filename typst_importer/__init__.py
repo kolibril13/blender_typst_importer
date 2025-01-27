@@ -2,9 +2,10 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty
 
-import polars as pl
-import numpy as np
-import databpy as db
+from pathlib import Path
+import typst
+import tempfile
+import bpy
 
 from io import StringIO
 from pathlib import Path
@@ -39,23 +40,28 @@ class ImportCsvPolarsOperator(bpy.types.Operator, ImportHelper):
         file_name_without_ext = csv_file.stem
         start_time = time.perf_counter()
 
-        df = pl.read_csv(csv_file)
+        temp_dir = Path(tempfile.gettempdir())
 
-        vertices = np.zeros((len(df), 3), dtype=np.float32)
-        bob = db.create_bob(vertices, name=f"CSV_{file_name_without_ext}")
+        typst_file = temp_dir / "hello.typ"
+        svg_file = temp_dir / "hello.svg"
 
-        for col in df.columns:
-            col_dtype = df[col].dtype
-            if col_dtype in [pl.Utf8]:
-                continue
-            data = df[col].to_numpy()
-            bob.store_named_attribute(data, col)
+        file_content = """
+        #set page(width: auto, height: auto, margin: 0cm, fill: none)
+        #set text(size: 5000pt)
+        $ sum_(k=1)^n k = (n(n+1)) / 2 $
+        """
+        typst_file.write_text(file_content)
+        typst.compile(typst_file, format="svg", output=str(svg_file))
+
+        bpy.ops.import_curve.svg(filepath=str(svg_file))
+        col = bpy.context.scene.collection.children["hello.svg"]
+        col.name = "Formula"
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
 
         self.report(
             {"INFO"},
-            f" 🐻‍❄️ 📥  Added {bob.name} in {elapsed_time_ms:.2f} ms",
+            f" 🐻‍❄️ 📥  Added {csv_file} in {elapsed_time_ms:.2f} ms",
         )
         return {"FINISHED"}
 
@@ -84,6 +90,7 @@ class CSV_FH_import(bpy.types.FileHandler):
 # Register the operator and menu entry
 def menu_func_import(self, context):
     self.layout.operator(ImportCsvPolarsOperator.bl_idname, text="CSV 🐻 (.csv)")
+
 
 class HelloWorldWorldPanel(bpy.types.Panel):
     bl_label = "Hello World Panel"

@@ -8,12 +8,12 @@ import tempfile
 import time
 
 # Operator for the button and drag-and-drop
-class ImportTxtPolarsOperator(bpy.types.Operator, ImportHelper):
+class ImportTypstOperator(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.import_txt_polars"
     bl_label = "Import TXT (Polars)"
     bl_options = {"PRESET", "UNDO"}
 
-    print("ImportTxtPolarsOperator")
+    print("ImportTypstOperator")
     # ImportHelper mix-in provides 'filepath' by default, but we redefine it here
     # to use SKIP_SAVE, allowing drag-and-drop to work properly.
     filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})
@@ -73,7 +73,7 @@ class TXT_FH_import(bpy.types.FileHandler):
 
 # Register the operator and menu entry
 def menu_func_import(self, context):
-    self.layout.operator(ImportTxtPolarsOperator.bl_idname, text="TXT 🐻 (.txt)")
+    self.layout.operator(ImportTypstOperator.bl_idname, text="TXT 🐻 (.txt)")
 
 
 class HelloWorldWorldPanel(bpy.types.Panel):
@@ -86,11 +86,11 @@ class HelloWorldWorldPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         layout.label(text="Hello World!")
-        layout.operator(ImportTxtPolarsOperator.bl_idname, text="Import TXT 🐻")
+        layout.operator(ImportTypstOperator.bl_idname, text="Import TXT 🐻")
 
 
 def register():
-    bpy.utils.register_class(ImportTxtPolarsOperator)
+    bpy.utils.register_class(ImportTypstOperator)
     bpy.utils.register_class(TXT_FH_import)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     bpy.utils.register_class(HelloWorldWorldPanel)
@@ -100,7 +100,7 @@ def unregister():
     bpy.utils.unregister_class(HelloWorldWorldPanel)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     bpy.utils.unregister_class(TXT_FH_import)
-    bpy.utils.unregister_class(ImportTxtPolarsOperator)
+    bpy.utils.unregister_class(ImportTypstOperator)
 
 
 if __name__ == "__main__":

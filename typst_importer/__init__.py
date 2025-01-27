@@ -36,7 +36,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         # Start timing
         start_time = time.perf_counter()
 
-        # Create a temp SVG path that includes the original file name
+        # Create a temp SVG path
         temp_dir = Path(tempfile.gettempdir())
         svg_file_name = f"{file_name_without_ext}.svg"
         svg_file = temp_dir / svg_file_name
@@ -48,8 +48,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         bpy.ops.import_curve.svg(filepath=str(svg_file))
 
         # Rename the newly created Collection
-        # By default, Blender creates a new collection named after the file name
-        # e.g. 'myfile.svg'
+        # By default, the new collection is named after the file name e.g. 'myfile.svg'
         imported_collection = bpy.context.scene.collection.children.get(svg_file_name)
         if imported_collection:
             imported_collection.name = f"Formula_{file_name_without_ext}"
@@ -62,7 +61,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
 
         self.report(
-            {"INFO"}, f" 🐻‍❄️ 📥  Added {typst_file.name} in {elapsed_time_ms:.2f} ms"
+            {"INFO"}, f" 🦢  Added {typst_file.name} in {elapsed_time_ms:.2f} ms"
         )
         return {"FINISHED"}
 
@@ -86,39 +85,22 @@ class TXT_FH_import(bpy.types.FileHandler):
 
     @classmethod
     def poll_drop(cls, context):
-        # Allow drag-and-drop in the 3D View
+        # Allow drag-and-drop
         return context.area
 
 
 def menu_func_import(self, context):
     """Function to add an entry into the File > Import menu."""
-    self.layout.operator(ImportTypstOperator.bl_idname, text="TXT via Typst (.txt)")
-
-
-class HelloWorldWorldPanel(bpy.types.Panel):
-    """A simple test panel under the World tab in the Properties."""
-
-    bl_label = "Hello World Panel"
-    bl_idname = "WORLD_PT_hello_world"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
-    bl_context = "world"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.label(text="Hello World!")
-        layout.operator(ImportTypstOperator.bl_idname, text="Import TXT 🐻")
+    self.layout.operator(ImportTypstOperator.bl_idname, text="Typst 🦢 via (.txt)")
 
 
 def register():
     bpy.utils.register_class(ImportTypstOperator)
     bpy.utils.register_class(TXT_FH_import)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
-    bpy.utils.register_class(HelloWorldWorldPanel)
 
 
 def unregister():
-    bpy.utils.unregister_class(HelloWorldWorldPanel)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)

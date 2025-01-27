@@ -21,6 +21,7 @@ class ImportCsvPolarsOperator(bpy.types.Operator, ImportHelper):
     bl_label = "Import CSV (Polars)"
     bl_options = {"PRESET", "UNDO"}
 
+    print("ImportCsvPolarsOperator")
     # ImportHelper mix-in provides 'filepath' by default, but we redefine it here
     # to use SKIP_SAVE, allowing drag-and-drop to work properly.
     filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})

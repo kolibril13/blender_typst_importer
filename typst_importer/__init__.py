@@ -9,48 +9,66 @@ import time
 
 # Operator for the button and drag-and-drop
 class ImportTypstOperator(bpy.types.Operator, ImportHelper):
-    bl_idname = "import_scene.import_txt_polars"
-    bl_label = "Import TXT (Polars)"
+    """Operator to import a .txt file, compile it via Typst, and import as SVG in Blender."""
+    
+    bl_idname = "import_scene.import_txt_typst"
+    bl_label = "Import TXT (Typst)"
     bl_options = {"PRESET", "UNDO"}
-
-    print("ImportTypstOperator")
+    
     # ImportHelper mix-in provides 'filepath' by default, but we redefine it here
     # to use SKIP_SAVE, allowing drag-and-drop to work properly.
-    filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})
-
+    filepath: StringProperty(
+        subtype="FILE_PATH",
+        options={"SKIP_SAVE"}
+    )
+    
     filename_ext = ".txt"
     filter_glob: StringProperty(default="*.txt", options={"HIDDEN"}, maxlen=255)
-
+    
     def execute(self, context):
-        # Ensure the filepath is a TXT file
+        # Check that it's really a .txt file
         if not self.filepath.lower().endswith(".txt"):
             self.report({"WARNING"}, "Selected file is not a TXT")
             return {"CANCELLED"}
 
-        # Use the selected/dropped file path
+        # Prepare the file variables
         typst_file = Path(self.filepath)
         file_name_without_ext = typst_file.stem
+        
+        # Start timing
         start_time = time.perf_counter()
 
+        # Create a temp SVG path that includes the original file name
         temp_dir = Path(tempfile.gettempdir())
-        svg_file = temp_dir / "hello.svg"
+        svg_file_name = f"{file_name_without_ext}.svg"
+        svg_file = temp_dir / svg_file_name
 
+        # Compile the input .txt file to an SVG via Typst
         typst.compile(typst_file, format="svg", output=str(svg_file))
 
+        # Import the generated SVG
         bpy.ops.import_curve.svg(filepath=str(svg_file))
-        col = bpy.context.scene.collection.children["hello.svg"]
-        col.name = "Formula"
+        
+        # Rename the newly created Collection
+        # By default, Blender creates a new collection named after the file name
+        # e.g. 'myfile.svg'
+        imported_collection = bpy.context.scene.collection.children.get(svg_file_name)
+        if imported_collection:
+            imported_collection.name = f"Formula_{file_name_without_ext}"
+        else:
+            # Fallback in case Blender changes how new collections are named
+            self.report({"WARNING"}, "Could not find the imported collection to rename.")
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
 
         self.report(
             {"INFO"},
-            f" 🐻‍❄️ 📥  Added {typst_file} in {elapsed_time_ms:.2f} ms",
+            f" 🐻‍❄️ 📥  Added {typst_file.name} in {elapsed_time_ms:.2f} ms"
         )
         return {"FINISHED"}
 
     def invoke(self, context, event):
-        # If the filepath is already set (e.g. drag-and-drop), execute directly
+        # If the filepath is set (drag-and-drop scenario), execute directly
         if self.filepath:
             return self.execute(context)
         # Otherwise, show the file browser
@@ -60,28 +78,35 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
 
 # File Handler for drag-and-drop support
 class TXT_FH_import(bpy.types.FileHandler):
+    """A file handler to allow .txt files to be dragged and dropped directly into Blender."""
+    
     bl_idname = "TXT_FH_import"
-    bl_label = "File handler for TXT import"
-    bl_import_operator = "import_scene.import_txt_polars"
+    bl_label = "File handler for TXT import (Typst)"
+    bl_import_operator = "import_scene.import_txt_typst"
     bl_file_extensions = ".txt"
 
     @classmethod
     def poll_drop(cls, context):
-        # Allow drag-and-drop in the 3D View
-        return context.area
+        # Restrict drag-and-drop to areas that make sense, e.g. 3D View
+        return context.area and context.area.type in {"VIEW_3D", "PROPERTIES"}
 
 
-# Register the operator and menu entry
 def menu_func_import(self, context):
-    self.layout.operator(ImportTypstOperator.bl_idname, text="TXT 🐻 (.txt)")
+    """Function to add an entry into the File > Import menu."""
+    self.layout.operator(
+        ImportTypstOperator.bl_idname, 
+        text="TXT via Typst (.txt)"
+    )
 
 
 class HelloWorldWorldPanel(bpy.types.Panel):
+    """A simple test panel under the World tab in the Properties."""
+    
     bl_label = "Hello World Panel"
     bl_idname = "WORLD_PT_hello_world"
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
-    bl_context = "world"  # Ensures the panel appears in the World tab
+    bl_context = "world"
 
     def draw(self, context):
         layout = self.layout

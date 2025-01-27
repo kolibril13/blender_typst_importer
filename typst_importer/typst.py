@@ -5,18 +5,26 @@ from .parsers import polars_df_to_bob
 from . import addon
 
 
-def load_csv(filepath: str) -> Object:
-    print(f"Loading CSV file: {filepath}")
+def load_typst(filepath: str) -> Object:
+    """Load a Typst file and create a Blender object from it.
+    
+    Args:
+        filepath: Path to the Typst file
+        
+    Returns:
+        The created Blender object
+    """
+    print(f"Loading Typst file: {filepath}")
     # Use the selected/dropped file path
-    csv_file = Path(filepath)
-    file_name_without_ext = csv_file.stem
+    typst_file = Path(filepath)
+    file_name_without_ext = typst_file.stem
 
-    df = pl.read_csv(csv_file)
-    bob = polars_df_to_bob(df, name=f"CSV_{file_name_without_ext}")
+    df = pl.read_csv(typst_file)
+    bob = polars_df_to_bob(df, name=f"Typst_{file_name_without_ext}")
     try:
-        bob.object.csv.filepath = str(csv_file)
+        bob.object.csv.filepath = str(typst_file)
     except AttributeError:
         addon.register()
-        bob.object.csv.filepath = str(csv_file)
+        bob.object.csv.filepath = str(typst_file)
 
     return bob.object

@@ -2,7 +2,7 @@ import bpy
 from bpy.props import StringProperty
 import time
 from bpy_extras.io_utils import ImportHelper
-from .typst import load_csv
+from .typst import load_typst
 from .parsers import update_obj_from_csv
 from pathlib import Path
 
@@ -37,7 +37,7 @@ class ImportCsvPolarsOperator(bpy.types.Operator, ImportHelper):
 
         start_time = time.perf_counter()
 
-        bob = load_csv(filepath=self.filepath)
+        bob = load_typst(filepath=self.filepath)
         bob.csv.filepath = self.filepath
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000

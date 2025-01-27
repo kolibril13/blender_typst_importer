@@ -85,14 +85,28 @@ class CSV_FH_import(bpy.types.FileHandler):
 def menu_func_import(self, context):
     self.layout.operator(ImportCsvPolarsOperator.bl_idname, text="CSV 🐻 (.csv)")
 
+class HelloWorldWorldPanel(bpy.types.Panel):
+    bl_label = "Hello World Panel"
+    bl_idname = "WORLD_PT_hello_world"
+    bl_space_type = "PROPERTIES"
+    bl_region_type = "WINDOW"
+    bl_context = "world"  # Ensures the panel appears in the World tab
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Hello World!")
+        layout.operator(ImportCsvPolarsOperator.bl_idname, text="Import CSV 🐻")
+
 
 def register():
     bpy.utils.register_class(ImportCsvPolarsOperator)
     bpy.utils.register_class(CSV_FH_import)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+    bpy.utils.register_class(HelloWorldWorldPanel)
 
 
 def unregister():
+    bpy.utils.unregister_class(HelloWorldWorldPanel)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     bpy.utils.unregister_class(CSV_FH_import)
     bpy.utils.unregister_class(ImportCsvPolarsOperator)

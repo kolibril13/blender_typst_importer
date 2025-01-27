@@ -7,24 +7,22 @@ import typst
 import tempfile
 import time
 
+
 # Operator for the button and drag-and-drop
 class ImportTypstOperator(bpy.types.Operator, ImportHelper):
     """Operator to import a .txt file, compile it via Typst, and import as SVG in Blender."""
-    
+
     bl_idname = "import_scene.import_txt_typst"
     bl_label = "Import TXT (Typst)"
     bl_options = {"PRESET", "UNDO"}
-    
+
     # ImportHelper mix-in provides 'filepath' by default, but we redefine it here
     # to use SKIP_SAVE, allowing drag-and-drop to work properly.
-    filepath: StringProperty(
-        subtype="FILE_PATH",
-        options={"SKIP_SAVE"}
-    )
-    
+    filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})
+
     filename_ext = ".txt"
     filter_glob: StringProperty(default="*.txt", options={"HIDDEN"}, maxlen=255)
-    
+
     def execute(self, context):
         # Check that it's really a .txt file
         if not self.filepath.lower().endswith(".txt"):
@@ -34,7 +32,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         # Prepare the file variables
         typst_file = Path(self.filepath)
         file_name_without_ext = typst_file.stem
-        
+
         # Start timing
         start_time = time.perf_counter()
 
@@ -48,7 +46,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
 
         # Import the generated SVG
         bpy.ops.import_curve.svg(filepath=str(svg_file))
-        
+
         # Rename the newly created Collection
         # By default, Blender creates a new collection named after the file name
         # e.g. 'myfile.svg'
@@ -57,13 +55,14 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
             imported_collection.name = f"Formula_{file_name_without_ext}"
         else:
             # Fallback in case Blender changes how new collections are named
-            self.report({"WARNING"}, "Could not find the imported collection to rename.")
+            self.report(
+                {"WARNING"}, "Could not find the imported collection to rename."
+            )
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
 
         self.report(
-            {"INFO"},
-            f" 🐻‍❄️ 📥  Added {typst_file.name} in {elapsed_time_ms:.2f} ms"
+            {"INFO"}, f" 🐻‍❄️ 📥  Added {typst_file.name} in {elapsed_time_ms:.2f} ms"
         )
         return {"FINISHED"}
 
@@ -79,7 +78,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
 # File Handler for drag-and-drop support
 class TXT_FH_import(bpy.types.FileHandler):
     """A file handler to allow .txt files to be dragged and dropped directly into Blender."""
-    
+
     bl_idname = "TXT_FH_import"
     bl_label = "File handler for TXT import (Typst)"
     bl_import_operator = "import_scene.import_txt_typst"
@@ -87,21 +86,18 @@ class TXT_FH_import(bpy.types.FileHandler):
 
     @classmethod
     def poll_drop(cls, context):
-        # Restrict drag-and-drop to areas that make sense, e.g. 3D View
-        return context.area and context.area.type in {"VIEW_3D", "PROPERTIES"}
+        # Allow drag-and-drop in the 3D View
+        return context.area
 
 
 def menu_func_import(self, context):
     """Function to add an entry into the File > Import menu."""
-    self.layout.operator(
-        ImportTypstOperator.bl_idname, 
-        text="TXT via Typst (.txt)"
-    )
+    self.layout.operator(ImportTypstOperator.bl_idname, text="TXT via Typst (.txt)")
 
 
 class HelloWorldWorldPanel(bpy.types.Panel):
     """A simple test panel under the World tab in the Properties."""
-    
+
     bl_label = "Hello World Panel"
     bl_idname = "WORLD_PT_hello_world"
     bl_space_type = "PROPERTIES"

@@ -36,21 +36,13 @@ class ImportCsvPolarsOperator(bpy.types.Operator, ImportHelper):
             return {"CANCELLED"}
 
         # Use the selected/dropped file path
-        csv_file = Path(self.filepath)
-        file_name_without_ext = csv_file.stem
+        typst_file = Path(self.filepath)
+        file_name_without_ext = typst_file.stem
         start_time = time.perf_counter()
 
         temp_dir = Path(tempfile.gettempdir())
-
-        typst_file = temp_dir / "hello.typ"
         svg_file = temp_dir / "hello.svg"
 
-        file_content = """
-        #set page(width: auto, height: auto, margin: 0cm, fill: none)
-        #set text(size: 5000pt)
-        $ sum_(k=1)^n k = (n(n+1)) / 2 $
-        """
-        typst_file.write_text(file_content)
         typst.compile(typst_file, format="svg", output=str(svg_file))
 
         bpy.ops.import_curve.svg(filepath=str(svg_file))
@@ -61,7 +53,7 @@ class ImportCsvPolarsOperator(bpy.types.Operator, ImportHelper):
 
         self.report(
             {"INFO"},
-            f" 🐻‍❄️ 📥  Added {csv_file} in {elapsed_time_ms:.2f} ms",
+            f" 🐻‍❄️ 📥  Added {typst_file} in {elapsed_time_ms:.2f} ms",
         )
         return {"FINISHED"}
 

@@ -1,19 +1,31 @@
 schema_version = "1.0.0"
 
 id = "typst_importer"
-version = "0.0.3"
+version = "0.0.4"
 name = "Typst Importer"
 tagline = "Blender extension to render Typst files"
 maintainer = "Jan-Hendrik Müller<jan-hendrik.mueller@uni-goettingen.de>"
-license = ["SPDX:GPL-3.0-or-later"]
+license = [
+	"SPDX:GPL-3.0-or-later",
+]
 
 type = "add-on"
 website = "https://github.com/kolibril13/blender_typst_importer"
-platforms = ["windows-x64", "linux-x64", "macos-arm64", "macos-x64"]
-tags = ["Geometry Nodes", "Import-Export"]
+platforms = [
+	"windows-x64",
+	"linux-x64",
+	"macos-arm64",
+	"macos-x64",
+]
+tags = [
+	"Geometry Nodes",
+	"Import-Export",
+]
 blender_version_min = "4.2.0"
 
-copyright = ["2025 Jan-Hendrik Müller"]
+copyright = [
+	"2025 Jan-Hendrik Müller",
+]
 wheels = [
 	"./wheels/typst-0.12.3-cp38-abi3-macosx_10_12_x86_64.whl",
 	"./wheels/typst-0.12.3-cp38-abi3-macosx_11_0_arm64.whl",

@@ -1,3 +1,4 @@
+from .utils import add_current_module_to_path
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty

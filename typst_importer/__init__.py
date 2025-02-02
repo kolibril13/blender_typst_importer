@@ -1,12 +1,11 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty
-
 from pathlib import Path
-import typst
-import tempfile
 import time
 
+# Import the helper function from typst_to_svg.py
+from .typst_to_svg import compile_and_import_typst
 
 # Operator for the button and drag-and-drop
 class ImportTypstOperator(bpy.types.Operator, ImportHelper):
@@ -15,8 +14,8 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
     bl_label = "Import Typst File (.txt/.typ)"
     bl_options = {"PRESET", "UNDO"}
 
-    # ImportHelper provides a default 'filepath' property, but we redefine it here
-    # with SKIP_SAVE to support drag–n–drop.
+    # ImportHelper provides a default 'filepath' property,
+    # but we redefine it here with SKIP_SAVE to support drag–n–drop.
     filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})
     
     # Set a default extension (the user can change it in the file browser)
@@ -36,19 +35,12 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         # Start the timer
         start_time = time.perf_counter()
 
-        # Create a temporary SVG file path
-        temp_dir = Path(tempfile.gettempdir())
-        svg_file_name = f"{file_name_without_ext}.svg"
-        svg_file = temp_dir / svg_file_name
-
-        # Compile the input .txt or .typ file to an SVG via Typst
-        typst.compile(typst_file, format="svg", output=str(svg_file))
-
-        # Import the generated SVG into Blender
-        bpy.ops.import_curve.svg(filepath=str(svg_file))
-
+        # Compile and import the file using our helper function
+        svg_file = compile_and_import_typst(typst_file) 
+        # TODO: maybe return the blender object here?
+        
         # Attempt to rename the newly created Collection
-        imported_collection = bpy.context.scene.collection.children.get(svg_file_name)
+        imported_collection = bpy.context.scene.collection.children.get(svg_file.name)
         if imported_collection:
             imported_collection.name = f"Formula_{file_name_without_ext}"
         else:

@@ -9,11 +9,22 @@ A Blender extension to render Typst files.
 
    Example Typst `hello.txt` code:
 
-   ```typst
-   #set page(width: auto, height: auto, margin: 0cm, fill: none)
-   #set text(size: 5000pt)
-   $ sum_(k=1)^n k = (n(n+1)) / 2 $
-   ```
+```typst
+#set page(width: auto, height: auto, margin: 0cm, fill: none)
+#set text(size: 5000pt)
+$ sum_(k=1)^n k = (n(n+1)) / 2 $
+```
+
+And here's an example using colored equations:
+```typst
+#set page(width: auto, height: auto, margin: 0cm, fill: none)
+#set text(size: 5000pt)
+
+#let korange() = text(fill: orange)[$k$]
+#let nblue() = text(fill: blue)[$n$]
+
+$ sum_(#korange() = 1)^#nblue() #korange() = (nblue()(nblue()+1)) / 2 $  
+ ```
 
 ## API usage
 ### Equation as SVG Curve

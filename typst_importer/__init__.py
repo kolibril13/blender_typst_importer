@@ -10,88 +10,80 @@ import time
 
 # Operator for the button and drag-and-drop
 class ImportTypstOperator(bpy.types.Operator, ImportHelper):
-    """Operator to import a .txt file, compile it via Typst, and import as SVG in Blender."""
-
+    """Operator to import a .txt or .typ file, compile it via Typst, and import as SVG in Blender."""
     bl_idname = "import_scene.import_txt_typst"
-    bl_label = "Import TXT (Typst)"
+    bl_label = "Import Typst File (.txt/.typ)"
     bl_options = {"PRESET", "UNDO"}
 
-    # ImportHelper mix-in provides 'filepath' by default, but we redefine it here
-    # to use SKIP_SAVE, allowing drag-and-drop to work properly.
+    # ImportHelper provides a default 'filepath' property, but we redefine it here
+    # with SKIP_SAVE to support drag–n–drop.
     filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})
-
+    
+    # Set a default extension (the user can change it in the file browser)
     filename_ext = ".txt"
-    filter_glob: StringProperty(default="*.txt", options={"HIDDEN"}, maxlen=255)
+    filter_glob: StringProperty(default="*.txt;*.typ", options={"HIDDEN"}, maxlen=255)
 
     def execute(self, context):
-        # Check that it's really a .txt file
-        if not self.filepath.lower().endswith(".txt"):
-            self.report({"WARNING"}, "Selected file is not a TXT")
+        # Verify that the selected file is either a .txt or .typ file.
+        if not self.filepath.lower().endswith((".txt", ".typ")):
+            self.report({"WARNING"}, "Selected file is not a TXT or TYP file")
             return {"CANCELLED"}
 
-        # Prepare the file variables
+        # Prepare file variables
         typst_file = Path(self.filepath)
         file_name_without_ext = typst_file.stem
 
-        # Start timing
+        # Start the timer
         start_time = time.perf_counter()
 
-        # Create a temp SVG path
+        # Create a temporary SVG file path
         temp_dir = Path(tempfile.gettempdir())
         svg_file_name = f"{file_name_without_ext}.svg"
         svg_file = temp_dir / svg_file_name
 
-        # Compile the input .txt file to an SVG via Typst
+        # Compile the input .txt or .typ file to an SVG via Typst
         typst.compile(typst_file, format="svg", output=str(svg_file))
 
-        # Import the generated SVG
+        # Import the generated SVG into Blender
         bpy.ops.import_curve.svg(filepath=str(svg_file))
 
-        # Rename the newly created Collection
-        # By default, the new collection is named after the file name e.g. 'myfile.svg'
+        # Attempt to rename the newly created Collection
         imported_collection = bpy.context.scene.collection.children.get(svg_file_name)
         if imported_collection:
             imported_collection.name = f"Formula_{file_name_without_ext}"
         else:
-            # Fallback in case Blender changes how new collections are named
-            self.report(
-                {"WARNING"}, "Could not find the imported collection to rename."
-            )
+            self.report({"WARNING"}, "Could not find the imported collection to rename.")
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
-
-        self.report(
-            {"INFO"}, f" 🦢  Added {typst_file.name} in {elapsed_time_ms:.2f} ms"
-        )
+        self.report({"INFO"}, f" 🦢  Added {typst_file.name} in {elapsed_time_ms:.2f} ms")
         return {"FINISHED"}
 
     def invoke(self, context, event):
-        # If the filepath is set (drag-and-drop scenario), execute directly
+        # If the operator was invoked with a filepath (drag–n–drop), execute directly.
         if self.filepath:
             return self.execute(context)
-        # Otherwise, show the file browser
+        # Otherwise, open the file browser.
         context.window_manager.fileselect_add(self)
         return {"RUNNING_MODAL"}
 
 
 # File Handler for drag-and-drop support
 class TXT_FH_import(bpy.types.FileHandler):
-    """A file handler to allow .txt files to be dragged and dropped directly into Blender."""
-
+    """A file handler to allow .txt and .typ files to be dragged and dropped directly into Blender."""
     bl_idname = "TXT_FH_import"
-    bl_label = "File handler for TXT import (Typst)"
+    bl_label = "File handler for TXT/TYP import (Typst)"
     bl_import_operator = "import_scene.import_txt_typst"
-    bl_file_extensions = ".txt"
+    bl_file_extensions = ".txt;.typ"
 
     @classmethod
     def poll_drop(cls, context):
-        # Allow drag-and-drop
-        return context.area
+        # Allow drag–n–drop
+        return context.area is not None
 
 
 def menu_func_import(self, context):
-    """Function to add an entry into the File > Import menu."""
-    self.layout.operator(ImportTypstOperator.bl_idname, text="Typst 🦢 via (.txt)")
+    """Add an entry into the File > Import menu."""
+    self.layout.operator(ImportTypstOperator.bl_idname, text="Typst 🦢 via (.txt/.typ)")
 
 
 def register():

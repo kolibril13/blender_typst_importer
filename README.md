@@ -67,8 +67,10 @@ col.name = "Formula"
 # Changelog
 
 ## v 0.0.5
-
 * add support for both .typ and .txt
+* Add Color support for Typst Equations (https://github.com/kolibril13/blender_typst_importer/pull/2)
+* Better handeling for strokes, e.g. in an equation like a/b.
+
 
 v 0.0.4 better packaging
 

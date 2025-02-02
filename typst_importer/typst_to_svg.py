@@ -1,12 +1,9 @@
 from pathlib import Path
 import tempfile
-import typst
-import bpy
 
-from lxml import etree
-from pathlib import Path
-from lxml import etree
 import bpy
+from lxml import etree
+import typst
 
 def simplify_svg(step1_content):
     
@@ -115,9 +112,7 @@ def replace_stroke_with_path(svg_content):
     
     return etree.tostring(svg_root, pretty_print=True, encoding='unicode')
 
-from pathlib import Path
-import typst
-import tempfile
+
 
 def compile_and_import_typst(typst_file: Path) -> Path:
     """

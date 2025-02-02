@@ -21,4 +21,10 @@ A Blender extension to render Typst files.
 
 # Changelog
 
+## v 0.0.5
+
+* add support for both .typ and .txt
+
+v 0.0.4 better packaging
+
 v 0.0.3 Add Drag'n drop support

@@ -66,6 +66,11 @@ col.name = "Formula"
 
 # Changelog
 
+## v 0.0.6 (in development)
+
+`from typst_importer.typst_to_svg import compile_and_import_typst`
+
+
 ## v 0.0.5
 * add support for both .typ and .txt
 * Add Color support for Typst Equations (https://github.com/kolibril13/blender_typst_importer/pull/2)

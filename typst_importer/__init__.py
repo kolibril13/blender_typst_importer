@@ -80,6 +80,7 @@ def menu_func_import(self, context):
 
 
 def register():
+    add_current_module_to_path()
     bpy.utils.register_class(ImportTypstOperator)
     bpy.utils.register_class(TXT_FH_import)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)

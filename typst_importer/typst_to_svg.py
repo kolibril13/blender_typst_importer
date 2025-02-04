@@ -191,7 +191,7 @@ def typst_to_blender_curves(typst_file: Path) -> bpy.types.Collection:
 
 def typst_express(content: str, header: str = "") -> bpy.types.Collection:
     """
-    A simplified function to create Blender curves from Typst content directly.
+    A function to create Blender curves from Typst string content.
 
     Args:
         content (str): The main Typst content/body to be rendered

@@ -151,7 +151,7 @@ def replace_stroke_with_path(svg_content):
     return etree.tostring(svg_root, pretty_print=True, encoding="unicode")
 
 
-def compile_and_import_typst(typst_file: Path) -> Path:
+def typst_to_blender_curves(typst_file: Path) -> bpy.types.Collection:
     """
     Compile a .txt or .typ file to an SVG using Typst,
     then import the generated SVG into Blender.
@@ -160,7 +160,7 @@ def compile_and_import_typst(typst_file: Path) -> Path:
         typst_file (Path): The path to the .txt or .typ file.
 
     Returns:
-        Path: The path to the generated SVG file.
+        bpy.types.Collection: The collection of imported Blender curves.
     """
     file_name_without_ext = typst_file.stem
 
@@ -187,3 +187,36 @@ def compile_and_import_typst(typst_file: Path) -> Path:
         obj.scale = (100, 100, 100)
 
     return imported_collection
+
+
+def typst_express(content: str, header: str = "") -> bpy.types.Collection:
+    """
+    A simplified function to create Blender curves from Typst content directly.
+
+    Args:
+        content (str): The main Typst content/body to be rendered
+        header (str, optional): Typst header content with settings. If not provided,
+                              uses default settings for auto-sizing and text size.
+
+    Returns:
+        bpy.types.Collection: The collection of imported Blender curves.
+    """
+    import tempfile
+    from pathlib import Path
+
+    # Default header if none provided
+    default_header = """
+#set page(width: auto, height: auto, margin: 0cm, fill: none)
+#set text(size: 50pt)
+"""
+    # Use provided header or default
+    header_content = header if header else default_header
+
+    # Create temporary file
+    temp_file = Path(tempfile.gettempdir()) / "typst_express_temp.typ"
+
+    # Write content to temporary file
+    temp_file.write_text(header_content + content)
+
+    # Use existing function to convert to Blender curves
+    return typst_to_blender_curves(temp_file)

@@ -6,7 +6,7 @@ from pathlib import Path
 import time
 
 # Import the helper function from typst_to_svg.py
-from .typst_to_svg import compile_and_import_typst
+from .typst_to_svg import typst_to_blender_curves
 
 
 # Operator for the button and drag-and-drop
@@ -39,7 +39,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         start_time = time.perf_counter()
 
         # Compile and import the file using our helper function
-        collection = compile_and_import_typst(typst_file)
+        collection = typst_to_blender_curves(typst_file)
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
         self.report(

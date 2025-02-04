@@ -118,7 +118,7 @@ def replace_stroke_with_path(svg_content):
     return etree.tostring(svg_root, pretty_print=True, encoding="unicode")
 
 
-def compile_and_import_typst(typst_file: Path) -> Path:
+def compile_and_import_typst(typst_file: Path) -> db.BlenderObject:
     """
     Compile a .txt or .typ file to an SVG using Typst,
     then import the generated SVG into Blender.

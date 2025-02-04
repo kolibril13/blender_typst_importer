@@ -189,12 +189,15 @@ def typst_to_blender_curves(typst_file: Path) -> bpy.types.Collection:
     return imported_collection
 
 
-def typst_express(content: str, header: str = "") -> bpy.types.Collection:
+def typst_express(
+    content: str, name: str = "typst_expr", header: str = ""
+) -> bpy.types.Collection:
     """
-    A function to create Blender curves from Typst string content.
+    A function to create Blender curves from Typst content.
 
     Args:
         content (str): The main Typst content/body to be rendered
+        name (str, optional): Name for the generated collection. Defaults to "typst_expr".
         header (str, optional): Typst header content with settings. If not provided,
                               uses default settings for auto-sizing and text size.
 
@@ -212,11 +215,16 @@ def typst_express(content: str, header: str = "") -> bpy.types.Collection:
     # Use provided header or default
     header_content = header if header else default_header
 
-    # Create temporary file
-    temp_file = Path(tempfile.gettempdir()) / "typst_express_temp.typ"
+    # Create temporary file with the specified name
+    temp_file = Path(tempfile.gettempdir()) / f"{name}.typ"
 
     # Write content to temporary file
     temp_file.write_text(header_content + content)
 
     # Use existing function to convert to Blender curves
-    return typst_to_blender_curves(temp_file)
+    collection = typst_to_blender_curves(temp_file)
+
+    # Rename the collection to the specified name
+    collection.name = name
+
+    return collection

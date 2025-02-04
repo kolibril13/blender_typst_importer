@@ -1,10 +1,10 @@
 [project]
 name = "typst_importer"
-version = "0.0.1"  # Placeholder; the real version is defined in blender_manifest.toml
+version = "0.0.6"  # Placeholder; the real version is defined in blender_manifest.toml
 description = "Blender extension to render Typst files"
 license = { text = "AGPL-3.0-or-later" }
 readme = "README.md"
-dependencies = ["typst"]
+dependencies = ["typst", "databpy"]
 requires-python = ">=3.11.0,<3.12"
 keywords = ["blender", "python", "typst"]
 maintainers = [
@@ -21,6 +21,7 @@ bpy = ["bpy>=4.2"]
 test = ["pytest", "pytest-cov"]
 dev = ["fake-bpy-module", "tomlkit"]
 docs = ["jupyter"]
+all = ["bpy", "pytest", "pytest-cov", "fake-bpy-module", "tomlkit", "jupyter"]
 
 [build-system]
 build-backend = "setuptools.build_meta"

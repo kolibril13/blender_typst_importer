@@ -4,7 +4,6 @@ import tempfile
 import bpy
 from lxml import etree
 import typst
-
 import copy
 
 
@@ -173,16 +172,18 @@ def compile_and_import_typst(typst_file: Path) -> Path:
     typst.compile(typst_file, format="svg", output=str(svg_file))
 
     step1_content = svg_file.read_text()
-    # print(step1_content)
     step2_content = simplify_svg(step1_content)
-    # print(step2_content)
     step3_content = replace_stroke_with_path(step2_content)
-    # print(step3_content)
+
     svg_file3 = temp_dir / "step3.svg"
     svg_file3.write_text(step3_content)
     # Import the generated SVG into Blender
     bpy.ops.import_curve.svg(filepath=str(svg_file3))
-    return svg_file3
 
-    # TODO: maybe return something else, like the blender object here?
-    # seems not very useful to return the path to the SVG file
+    imported_collection = bpy.context.scene.collection.children.get(svg_file3.name)
+    imported_collection.name = f"Typst_{file_name_without_ext}"
+
+    for obj in imported_collection.objects:
+        obj.scale = (100, 100, 100)
+
+    return imported_collection

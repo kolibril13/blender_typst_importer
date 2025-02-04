@@ -1,3 +1,4 @@
+# Blender Typst Importer
 
 A Blender extension to render Typst files.
 
@@ -20,7 +21,6 @@ $ sum_(k=1)^n k = (n(n+1)) / 2 $
    - Alternatively, go to **File -> Import -> Typst 🦢 via (.txt/.typ)**.
 
 
-# Blender Typst Importer
 
 ## API usage
 

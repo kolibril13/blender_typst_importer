@@ -147,7 +147,7 @@ def compile_and_import_typst(typst_file: Path) -> db.BlenderObject:
     svg_file3 = temp_dir / "step3.svg"
     svg_file3.write_text(step3_content)
     # Import the generated SVG into Blender
-    with db.ObjectTracker as o:
+    with db.ObjectTracker() as o:
         bpy.ops.import_curve.svg(filepath=str(svg_file3))
         bob = db.BlenderObject(o.latest())
     return bob

@@ -6,11 +6,13 @@ from pathlib import Path
 import time
 
 # Import the helper function from typst_to_svg.py
-from .typst_to_svg import compile_and_import_typst
+from .typst_to_svg import typst_to_blender_curves
+
 
 # Operator for the button and drag-and-drop
 class ImportTypstOperator(bpy.types.Operator, ImportHelper):
     """Operator to import a .txt or .typ file, compile it via Typst, and import as SVG in Blender."""
+
     bl_idname = "import_scene.import_txt_typst"
     bl_label = "Import Typst File (.txt/.typ)"
     bl_options = {"PRESET", "UNDO"}
@@ -18,7 +20,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
     # ImportHelper provides a default 'filepath' property,
     # but we redefine it here with SKIP_SAVE to support drag–n–drop.
     filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})
-    
+
     # Set a default extension (the user can change it in the file browser)
     filename_ext = ".txt"
     filter_glob: StringProperty(default="*.txt;*.typ", options={"HIDDEN"}, maxlen=255)
@@ -37,18 +39,13 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         start_time = time.perf_counter()
 
         # Compile and import the file using our helper function
-        svg_file = compile_and_import_typst(typst_file) 
-        # TODO: maybe return the blender object here?
-        
-        # Attempt to rename the newly created Collection
-        imported_collection = bpy.context.scene.collection.children.get(svg_file.name)
-        if imported_collection:
-            imported_collection.name = f"Formula_{file_name_without_ext}"
-        else:
-            self.report({"WARNING"}, "Could not find the imported collection to rename.")
+        collection = typst_to_blender_curves(typst_file)
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
-        self.report({"INFO"}, f" 🦢  Added {typst_file.name} in {elapsed_time_ms:.2f} ms")
+        self.report(
+            {"INFO"},
+            f" 🦢  Typst Importer: {typst_file.name} rendered in {elapsed_time_ms:.2f} ms as {collection.name}",
+        )
         return {"FINISHED"}
 
     def invoke(self, context, event):
@@ -63,6 +60,7 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
 # File Handler for drag-and-drop support
 class TXT_FH_import(bpy.types.FileHandler):
     """A file handler to allow .txt and .typ files to be dragged and dropped directly into Blender."""
+
     bl_idname = "TXT_FH_import"
     bl_label = "File handler for TXT/TYP import (Typst)"
     bl_import_operator = "import_scene.import_txt_typst"

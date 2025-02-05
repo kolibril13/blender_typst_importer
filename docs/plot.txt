@@ -1,0 +1,16 @@
+#set page(width: auto, height: auto, margin: 0cm, fill: none)
+#set text(size: 20pt)
+
+#import "@preview/cetz:0.3.2": canvas, draw
+#import "@preview/cetz-plot:0.1.1": plot
+
+#canvas({
+  import draw: *
+  plot.plot(name: "plot", size: (5,4), {
+    plot.add(domain: (0, 5), x => calc.sin(x))
+    plot.add-anchor("anchor", (calc.pi, 0))
+  })
+
+  circle("plot.anchor", radius: .1, fill: black)
+  content((), anchor: "west", padding: 1em, [Label])
+})

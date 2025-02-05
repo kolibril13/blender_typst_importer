@@ -88,6 +88,23 @@ for i in range(0,10):
 
 # Changelog
 
+
+## v 0.1.0
+Two new otions for typst_express: scale_factor and origin_to_char!
+```
+def typst_express(
+    content: str,
+    name: str = "typst_expr",
+    header: str = "",
+    scale_factor: float = 100.0,
+    origin_to_char: bool = False
+)
+``` 
+from typst_importer.typst_to_svg import typst_express
+typst_express("$ a = b/d $" , scale_factor=200, origin_to_char=True)
+
+![alt text](<docs/Clipboard 5. Feb 2025 at 15.23.jpeg>)
+
 ## v 0.0.6 
 
 * `from typst_importer.typst_to_svg import typst_express`

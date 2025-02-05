@@ -3,8 +3,8 @@ import tempfile
 
 import bpy
 from lxml import etree
-import typst
 import copy
+import typst
 
 
 def simplify_svg(svg_content):
@@ -151,13 +151,17 @@ def replace_stroke_with_path(svg_content):
     return etree.tostring(svg_root, pretty_print=True, encoding="unicode")
 
 
-def typst_to_blender_curves(typst_file: Path) -> bpy.types.Collection:
+def typst_to_blender_curves(
+    typst_file: Path, scale_factor: float = 100.0, origin_to_char: bool = False
+) -> bpy.types.Collection:
     """
     Compile a .txt or .typ file to an SVG using Typst,
     then import the generated SVG into Blender.
 
     Args:
         typst_file (Path): The path to the .txt or .typ file.
+        scale_factor (float, optional): Scale factor for the imported curves. Defaults to 100.0.
+        origin_to_char (bool, optional): If True, set the origin of each object to its geometry. Defaults to False.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender curves.
@@ -184,13 +188,30 @@ def typst_to_blender_curves(typst_file: Path) -> bpy.types.Collection:
     imported_collection.name = f"Typst_{file_name_without_ext}"
 
     for obj in imported_collection.objects:
-        obj.scale = (100, 100, 100)
+        obj.scale = (scale_factor, scale_factor, scale_factor)
+
+    if origin_to_char:
+        bpy.ops.object.select_all(action="DESELECT")
+        if imported_collection.objects:
+            # Set the first object as active
+            bpy.context.view_layer.objects.active = imported_collection.objects[0]
+            # Now we can safely set the mode to OBJECT
+            bpy.ops.object.mode_set(mode="OBJECT")
+            for obj in imported_collection.objects:
+                bpy.context.view_layer.objects.active = obj
+                obj.select_set(True)
+                bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="MEDIAN")
+                obj.select_set(False)
 
     return imported_collection
 
 
 def typst_express(
-    content: str, name: str = "typst_expr", header: str = ""
+    content: str,
+    name: str = "typst_expr",
+    header: str = "",
+    scale_factor: float = 100.0,
+    origin_to_char: bool = False,
 ) -> bpy.types.Collection:
     """
     A function to create Blender curves from Typst content.
@@ -200,12 +221,12 @@ def typst_express(
         name (str, optional): Name for the generated collection. Defaults to "typst_expr".
         header (str, optional): Typst header content with settings. If not provided,
                               uses default settings for auto-sizing and text size.
+        scale_factor (float, optional): Scale factor for the imported curves. Defaults to 100.0.
+        origin_to_char (bool, optional): If True, set the origin of each object to its geometry. Defaults to False.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender curves.
     """
-    import tempfile
-    from pathlib import Path
 
     # Default header if none provided
     default_header = """
@@ -222,7 +243,7 @@ def typst_express(
     temp_file.write_text(header_content + content)
 
     # Use existing function to convert to Blender curves
-    collection = typst_to_blender_curves(temp_file)
+    collection = typst_to_blender_curves(temp_file, scale_factor, origin_to_char)
 
     # Rename the collection to the specified name
     collection.name = name

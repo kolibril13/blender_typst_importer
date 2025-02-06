@@ -1,6 +1,7 @@
 from pathlib import Path
 import tempfile
 
+from mathutils import Matrix
 import bpy
 from lxml import etree
 import copy
@@ -188,7 +189,7 @@ def typst_to_blender_curves(
     imported_collection.name = f"Typst_{file_name_without_ext}"
 
     for obj in imported_collection.objects:
-        obj.scale = (scale_factor, scale_factor, scale_factor)
+        obj.data.transform(Matrix.Scale(scale_factor, 4))
 
     if origin_to_char:
         bpy.ops.object.select_all(action="DESELECT")

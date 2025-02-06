@@ -105,6 +105,12 @@ typst_express("$ a = b/d $" , scale_factor=200, origin_to_char=True)
 
 ![alt text](<docs/Clipboard 5. Feb 2025 at 15.23.jpeg>)
 
+## v 0.0.7
+
+* fix problem with vertical strokes
+* new thumbnail
+* Apply all transformations
+
 ## v 0.0.6 
 
 * `from typst_importer.typst_to_svg import typst_express`

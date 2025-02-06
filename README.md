@@ -110,7 +110,9 @@ typst_express("$ a = b/d $" , scale_factor=200, origin_to_char=True)
 * fix problem with vertical strokes
 * new thumbnail
 * Apply all transformations
-
+* new helper function `from typst_importer.curve_utils import get_curve_collection_bounds` in order to transform equations.
+* new function `from typst_importer.curve_utils import shift_scene_content`
+  
 ## v 0.0.6 
 
 * `from typst_importer.typst_to_svg import typst_express`

@@ -4,7 +4,7 @@ import tempfile
 from mathutils import Matrix
 import bpy
 import typst
-from .svg_preprocessing import simplify_svg, replace_stroke_with_path
+from .svg_preprocessing import preprocess_svg
 
 
 def typst_to_blender_curves(
@@ -31,9 +31,9 @@ def typst_to_blender_curves(
     # Compile the input file to an SVG via Typst
     typst.compile(typst_file, format="svg", output=str(svg_file))
 
+    print("hi")
     step1_content = svg_file.read_text()
-    step2_content = simplify_svg(step1_content)
-    step3_content = replace_stroke_with_path(step2_content)
+    step3_content = preprocess_svg(step1_content)
 
     svg_file3 = temp_dir / "step3.svg"
     svg_file3.write_text(step3_content)

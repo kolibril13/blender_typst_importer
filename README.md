@@ -90,8 +90,8 @@ for i in range(0,10):
 
 
 ## v 0.1.0
-Two new otions for typst_express: scale_factor and origin_to_char!
-```
+* Two new otions for typst_express: scale_factor and origin_to_char!
+```py
 def typst_express(
     content: str,
     name: str = "typst_expr",
@@ -100,10 +100,32 @@ def typst_express(
     origin_to_char: bool = False
 )
 ``` 
+in use
+```py
 from typst_importer.typst_to_svg import typst_express
 typst_express("$ a = b/d $" , scale_factor=200, origin_to_char=True)
-
+```
 ![alt text](<docs/Clipboard 5. Feb 2025 at 15.23.jpeg>)
+
+* better SVG pre-processing:
+```py
+from typst_importer.svg_preprocessing import stroke_to_filled_path, preprocess_svg
+
+svg_content = open("test.svg").read()
+
+svg_content = preprocess_svg(svg_content)
+svg_content = stroke_to_filled_path(svg_content)
+
+open("test_filled.svg", "w").write(svg_content)
+```
+
+* new notebook helper function:
+
+`from typst_importer.notebook_utils import display_svg`
+
+
+
+
 
 ## v 0.0.7
 

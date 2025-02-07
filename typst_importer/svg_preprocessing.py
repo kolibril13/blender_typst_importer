@@ -5,7 +5,7 @@ import sys
 import xml.etree.ElementTree as ET
 from svg.path import parse_path
 
-def simplify_svg(svg_content):
+def flatten_svg(svg_content):
     """
     Replaces all <use xlink:href="#..."> references with the actual symbol contents,
     preserving transforms and styles so the final visual layout is unchanged.

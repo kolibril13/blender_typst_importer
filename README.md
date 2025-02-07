@@ -132,7 +132,7 @@ shift_scene_content(c)
 ```
 ### Improvements
 * Enhanced SVG preprocessing pipeline:
-  - `preprocess_svg` will flatten the SVG structure fist
+  - `flatten_svg` will flatten the SVG structure fist
   - `stroke_to_filled_path` will convert all strokes to paths.
 
 Before <-> After:
@@ -140,14 +140,14 @@ Before <-> After:
 ![alt text](tests/comparison.jpeg)
 
 ```py
-from typst_importer.svg_preprocessing import stroke_to_filled_path, flatten_svg
+from typst_importer.svg_preprocessing import  flatten_svg, stroke_to_filled_path
 svg_content = open("test.svg").read()
 svg_content = flatten_svg(svg_content)
 svg_content = stroke_to_filled_path(svg_content)
 
 open("test_filled.svg", "w").write(svg_content)
 ```
-or combined as
+or combined as `preprocess_svg`
 ```py
 from typst_importer.svg_preprocessing import preprocess_svg
 svg_content = open("test.svg").read()

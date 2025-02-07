@@ -222,3 +222,9 @@ def stroke_to_filled_path(svg_content):
                         break
     # Return the modified SVG as a string.
     return ET.tostring(root, encoding="unicode")
+
+
+def preprocess_svg(svg_content):
+    simplified_svg = flatten_svg(svg_content)
+    processed_svg = stroke_to_filled_path(simplified_svg)
+    return processed_svg

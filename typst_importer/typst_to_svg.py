@@ -31,7 +31,6 @@ def typst_to_blender_curves(
     # Compile the input file to an SVG via Typst
     typst.compile(typst_file, format="svg", output=str(svg_file))
 
-    print("hi")
     step1_content = svg_file.read_text()
     step3_content = preprocess_svg(step1_content)
 

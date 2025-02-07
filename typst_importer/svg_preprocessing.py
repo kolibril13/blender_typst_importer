@@ -5,6 +5,7 @@ import sys
 import xml.etree.ElementTree as ET
 from svg.path import parse_path
 
+
 def flatten_svg(svg_content):
     """
     Replaces all <use xlink:href="#..."> references with the actual symbol contents,
@@ -93,12 +94,14 @@ SVG_NS = "http://www.w3.org/2000/svg"
 # Register the namespace so that the output does not include prefixes.
 ET.register_namespace("", SVG_NS)
 
+
 def find_parent(root, child):
     """Helper function: given the root and a child element, find the child’s parent."""
     for parent in root.iter():
         if child in list(parent):
             return parent
     return None
+
 
 def get_derivative(path_obj, t, dt=1e-6):
     """
@@ -114,17 +117,18 @@ def get_derivative(path_obj, t, dt=1e-6):
         return complex(0, 0)
     return (pt1 - pt0) / (t1 - t0)
 
+
 def stroke_to_path(d_attr, stroke_width, num_samples=1000):
     """
     Given a path data string d_attr and a stroke width,
     compute an outline that represents the painted stroke.
-    
+
     We sample the original path (using svg.path.parse_path) at many points.
     At each sample point we compute the tangent (via a finite difference derivative),
     then a normal vector. We then offset the point by +offset (left side) and -offset (right side).
     Finally, we build a closed polygon that is the left offset (in order)
     and then the right offset (in reverse order).
-    
+
     Note: This approximation works for any direction (and for curves) if enough
     sample points are used.
     """
@@ -133,7 +137,7 @@ def stroke_to_path(d_attr, stroke_width, num_samples=1000):
 
     left_points = []
     right_points = []
-    
+
     # Sample along the entire path from t=0 to t=1.
     for i in range(num_samples + 1):
         t = i / num_samples
@@ -146,20 +150,22 @@ def stroke_to_path(d_attr, stroke_width, num_samples=1000):
             # If zero derivative (e.g. at a cusp) use the previous normal if available.
             if left_points:
                 # This is a crude fallback.
-                normal = ( (left_points[-1][0] - pt.real) / offset,
-                           (left_points[-1][1] - pt.imag) / offset )
+                normal = (
+                    (left_points[-1][0] - pt.real) / offset,
+                    (left_points[-1][1] - pt.imag) / offset,
+                )
             else:
                 normal = (0, 0)
         else:
             # Normal is (-dy, dx) normalized.
-            nx, ny = -dy/length, dx/length
+            nx, ny = -dy / length, dx / length
             normal = (nx, ny)
         # Compute the offset points.
-        left_pt = (pt.real + normal[0]*offset, pt.imag + normal[1]*offset)
-        right_pt = (pt.real - normal[0]*offset, pt.imag - normal[1]*offset)
+        left_pt = (pt.real + normal[0] * offset, pt.imag + normal[1] * offset)
+        right_pt = (pt.real - normal[0] * offset, pt.imag - normal[1] * offset)
         left_points.append(left_pt)
         right_points.append(right_pt)
-    
+
     # Build a closed polygon: traverse left_points, then the reversed right_points.
     d_parts = []
     d_parts.append("M {} {}".format(*left_points[0]))
@@ -170,14 +176,15 @@ def stroke_to_path(d_attr, stroke_width, num_samples=1000):
     d_parts.append("Z")  # close path
     return " ".join(d_parts)
 
-def convert_svg_stroke_to_path(svg_content):
+
+def stroke_to_filled_path(svg_content):
     """
     Parse the SVG content (as a string), find any <path> that has a stroke,
     convert its stroke to a filled outline path, and return the modified SVG string.
     """
     # Parse the SVG.
     root = ET.fromstring(svg_content)
-    
+
     # Find SVG path elements (in the SVG namespace).
     path_elems = root.findall(".//{" + SVG_NS + "}path")
     for path_elem in path_elems:
@@ -189,21 +196,21 @@ def convert_svg_stroke_to_path(svg_content):
                 stroke_width = float(attrib.get("stroke-width"))
             except ValueError:
                 continue  # skip if stroke-width is not a number
-            
+
             # Compute the new path data that outlines the stroke.
             new_d = stroke_to_path(d_attr, stroke_width)
-            
+
             # Create a new path element (in the SVG namespace).
             new_path = ET.Element("{" + SVG_NS + "}path")
             new_path.set("d", new_d)
             # Use the original stroke color as the fill.
             new_path.set("fill", attrib.get("stroke"))
             new_path.set("fill-rule", "nonzero")
-            
+
             # Optionally, copy any transform or other relevant attributes.
             if "transform" in attrib:
                 new_path.set("transform", attrib.get("transform"))
-            
+
             # Replace the old element with the new one.
             parent = find_parent(root, path_elem)
             if parent is not None:

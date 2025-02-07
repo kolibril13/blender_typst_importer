@@ -111,6 +111,25 @@ typst_express("$ a = b/d $" , scale_factor=200, origin_to_char=True)
 ```
 ![alt text](<docs/Clipboard 5. Feb 2025 at 15.23.jpeg>)
 
+
+* `get_curve_collection_bounds` will get the deminsons of a collection, e.g. 
+```py
+from typst_importer.typst_to_svg import typst_express
+from typst_importer.curve_utils import get_curve_collection_bounds
+c = typst_express("$ a = b/d$", scale_factor=100, origin_to_char=False)
+min_p, max_p = get_curve_collection_bounds(c)
+print(min_p, max_p)
+# out <Vector (0.0249, -0.2190, 0.0000)> <Vector (1.4839, 0.5474, 0.0000)>
+```
+* `shift_scene_content` will shift all scene_content to a new position except the given collection c.
+```py
+from typst_importer.typst_to_svg import typst_express
+from typst_importer.curve_utils import shift_scene_content
+
+c = typst_express("$ a = b/d$", scale_factor=100, origin_to_char=False)
+shift_scene_content(c)  
+
+```
 ### Improvements
 * Enhanced SVG preprocessing pipeline:
   - `preprocess_svg` will flatten the SVG structure fist

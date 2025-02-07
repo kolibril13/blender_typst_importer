@@ -90,7 +90,10 @@ for i in range(0,10):
 
 
 ## v 0.1.0
-* Two new otions for typst_express: scale_factor and origin_to_char!
+### New Features
+* Added customizable scaling and positioning options to `typst_express`:
+  - `scale_factor`: Control the size of the rendered output (default: 100.0)
+  - `origin_to_char`: Option to adjust origin point relative to characters (default: False)
 ```py
 def typst_express(
     content: str,
@@ -99,34 +102,52 @@ def typst_express(
     scale_factor: float = 100.0,
     origin_to_char: bool = False
 )
-``` 
-in use
+```
+
+For example
 ```py
 from typst_importer.typst_to_svg import typst_express
 typst_express("$ a = b/d $" , scale_factor=200, origin_to_char=True)
 ```
 ![alt text](<docs/Clipboard 5. Feb 2025 at 15.23.jpeg>)
 
-* better SVG pre-processing:
+### Improvements
+* Enhanced SVG preprocessing pipeline:
+  - `preprocess_svg` will flatten the SVG structure fist
+  - `stroke_to_filled_path` will convert all strokes to paths.
+
+Before <-> After:
+
+![alt text](tests/comparison.jpeg)
+
 ```py
-from typst_importer.svg_preprocessing import stroke_to_filled_path, preprocess_svg
-
+from typst_importer.svg_preprocessing import stroke_to_filled_path, flatten_svg
 svg_content = open("test.svg").read()
-
-svg_content = preprocess_svg(svg_content)
+svg_content = flatten_svg(svg_content)
 svg_content = stroke_to_filled_path(svg_content)
 
 open("test_filled.svg", "w").write(svg_content)
 ```
+or combined as
+```py
+from typst_importer.svg_preprocessing import preprocess_svg
+svg_content = open("test.svg").read()
+svg_content = preprocess_svg(svg_content)
+open("test_filled.svg", "w").write(svg_content)
+```
 
-* new notebook helper function:
+### Developer Tools
+* Added new notebook utilities for easier development and testing:
+  - `display_svg` function to display svgs in Jupyter.
 
-`from typst_importer.notebook_utils import display_svg`
+```py
+from typst_importer.notebook_utils import display_svg
+display_svg(step1_content , width='500px')
+```
 
 
-
-
-
+### Documentation
+* Added examples for new features
 ## v 0.0.7
 
 * fix problem with vertical strokes

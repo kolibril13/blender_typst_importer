@@ -13,7 +13,7 @@ bpy.types.Collection.processed_svg = bpy.props.StringProperty(
 )
 
 def typst_to_blender_curves(
-    typst_file: Path, scale_factor: float = 100.0, origin_to_char: bool = False
+    typst_file: Path, scale_factor: float = 100.0, origin_to_char: bool = False, join_curves: bool = False
 ) -> bpy.types.Collection:
     """
     Compile a .txt or .typ file to an SVG using Typst,
@@ -23,6 +23,7 @@ def typst_to_blender_curves(
         typst_file (Path): The path to the .txt or .typ file.
         scale_factor (float, optional): Scale factor for the imported curves. Defaults to 100.0.
         origin_to_char (bool, optional): If True, set the origin of each object to its geometry. Defaults to False.
+        join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender curves.
@@ -51,6 +52,16 @@ def typst_to_blender_curves(
     for obj in imported_collection.objects:
         obj.data.transform(Matrix.Scale(scale_factor, 4))
 
+    if join_curves and len(imported_collection.objects) > 1:
+        bpy.ops.object.select_all(action="DESELECT")
+        for obj in imported_collection.objects:
+            obj.select_set(True)
+        # Set the first curve as the active object
+        bpy.context.view_layer.objects.active = imported_collection.objects[0]
+        bpy.ops.object.join()
+        # Rename the joined object
+        bpy.context.active_object.name = file_name_without_ext
+
     if origin_to_char:
         bpy.ops.object.select_all(action="DESELECT")
         if imported_collection.objects:
@@ -73,6 +84,7 @@ def typst_express(
     header: str = "",
     scale_factor: float = 100.0,
     origin_to_char: bool = False,
+    join_curves: bool = False,
 ) -> bpy.types.Collection:
     """
     A function to create Blender curves from Typst content.
@@ -84,6 +96,7 @@ def typst_express(
                               uses default settings for auto-sizing and text size.
         scale_factor (float, optional): Scale factor for the imported curves. Defaults to 100.0.
         origin_to_char (bool, optional): If True, set the origin of each object to its geometry. Defaults to False.
+        join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender curves.
@@ -104,7 +117,7 @@ def typst_express(
     temp_file.write_text(header_content + content)
 
     # Use existing function to convert to Blender curves
-    collection = typst_to_blender_curves(temp_file, scale_factor, origin_to_char)
+    collection = typst_to_blender_curves(temp_file, scale_factor, origin_to_char, join_curves)
 
     # Rename the collection to the specified name
     collection.name = name

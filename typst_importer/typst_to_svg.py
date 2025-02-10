@@ -6,6 +6,11 @@ import bpy
 import typst
 from .svg_preprocessing import preprocess_svg
 
+# Register the property for collections
+bpy.types.Collection.processed_svg = bpy.props.StringProperty(
+    name="Processed SVG",
+    description="Processed SVG content from Typst",
+)
 
 def typst_to_blender_curves(
     typst_file: Path, scale_factor: float = 100.0, origin_to_char: bool = False
@@ -41,6 +46,7 @@ def typst_to_blender_curves(
 
     imported_collection = bpy.context.scene.collection.children.get(svg_file3.name)
     imported_collection.name = f"Typst_{file_name_without_ext}"
+    imported_collection.processed_svg = step3_content
 
     for obj in imported_collection.objects:
         obj.data.transform(Matrix.Scale(scale_factor, 4))

@@ -89,6 +89,21 @@ for i in range(0,10):
 # Changelog
 
 
+
+## v 0.1.1
+
+* add new function: `c.processed_svg`
+```py
+from typst_importer.typst_to_svg import typst_express
+from typst_importer.notebook_utils import display_svg
+c = typst_express("""
+#set math.lr(size: 80%)
+$ integral.triple _V (nabla dot accent(F, arrow)) dif V = integral.surf_(partial V)  (accent(F, arrow) dot accent(n, arrow)) dif A $
+"""
+)
+display_svg(c.processed_svg, width="400px")
+```
+
 ## v 0.1.0
 ### New Features
 * Added customizable scaling and positioning options to `typst_express`:

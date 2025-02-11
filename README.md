@@ -106,7 +106,7 @@ display_svg(c.processed_svg, width="400px")
 ```
 
 
-* New docs at: https://kolibril13.github.io/bpy-gallery/n4_typst_examples/
+* New docs at: https://kolibril13.github.io/bpy-gallery/n2typst_examples/
 
 * new thumbnail
 

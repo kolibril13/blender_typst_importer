@@ -105,6 +105,11 @@ $ integral.triple _V (nabla dot accent(F, arrow)) dif V = integral.surf_(partial
 display_svg(c.processed_svg, width="400px")
 ```
 
+
+* New docs at: https://kolibril13.github.io/bpy-gallery/n4_typst_examples/
+
+* new thumbnail
+
 ## v 0.1.0
 ### New Features
 * Added customizable scaling and positioning options to `typst_express`:

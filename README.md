@@ -1,6 +1,7 @@
 # Blender Typst Importer
 
 A Blender extension to render Typst files.
+![thumbnail](https://github.com/user-attachments/assets/c9877b35-a0f3-4bbd-8de3-4a849292d0b3)
 
 ## Usage
 

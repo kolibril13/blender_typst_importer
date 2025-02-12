@@ -89,6 +89,12 @@ for i in range(0,10):
 
 # Changelog
 
+## v 0.1.2
+
+new function: convert from curve to mesh
+```py
+c = typst_express("$ . . . $", scale_factor=100, origin_to_char=False, convert_to_mesh=True)
+```
 
 
 ## v 0.1.1

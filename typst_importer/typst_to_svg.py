@@ -82,12 +82,28 @@ def typst_to_blender_curves(
                 obj.select_set(False)
 
     if convert_to_mesh:
+
+        # Convert curves to meshes
         for obj in imported_collection.objects:
             if obj.type == "CURVE":
+                # Store reference to original curve data
+                curve_data = obj.data
+                original_name = obj.name.replace("Curve", "")
+
+                # Select the curve object
                 bpy.context.view_layer.objects.active = obj
                 obj.select_set(True)
+
+                # Convert to mesh
                 bpy.ops.object.convert(target="MESH")
+
+                # Rename the mesh object to keep original name but with Mesh prefix
+                obj.name = f"Mesh{original_name}"
+
                 obj.select_set(False)
+
+                # Now that the object has been converted, we can remove the original curve data
+                bpy.data.curves.remove(curve_data)
 
     return imported_collection
 

@@ -6,7 +6,7 @@ from mathutils import Matrix
 import bpy
 import typst
 from .svg_preprocessing import preprocess_svg
-
+print("Importing typst_to_svg.py")
 # Register the property for collections
 bpy.types.Collection.processed_svg = bpy.props.StringProperty(
     name="Processed SVG",
@@ -57,9 +57,9 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
         collection: The collection containing objects whose materials need deduplication
     """
 
-    # Clean up any remaining unused materials that might have been created before
-    for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
-        bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
+    # # Clean up any remaining unused materials that might have been created before
+    # for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
+    #     bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
     
     materials_dict = {}
 
@@ -87,9 +87,9 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
             if current_mat.users == 0:
                 bpy.data.materials.remove(current_mat)
 
-    # Clean up any remaining unused materials
-    for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
-        bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
+    # # Clean up any remaining unused materials
+    # for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
+    #     bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
 
 
 # Helper functions for object manipulation
@@ -141,7 +141,7 @@ def _convert_to_meshes(collection: bpy.types.Collection) -> None:
         bpy.data.curves.remove(curve_data)
 
     # Clean up any orphaned data after conversion
-    bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
+    # bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
 
 
 # Main conversion functions
@@ -211,7 +211,7 @@ def typst_to_blender_curves(
         _convert_to_meshes(imported_collection)
 
     # Final cleanup of any remaining unused data
-    bpy.ops.outliner.orphans_purge(do_recursive=True)
+    # bpy.ops.outliner.orphans_purge(do_recursive=True)
 
     return imported_collection
 

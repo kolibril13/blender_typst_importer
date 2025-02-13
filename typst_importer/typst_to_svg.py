@@ -14,6 +14,7 @@ bpy.types.Collection.processed_svg = bpy.props.StringProperty(
 )
 
 
+# Core object and material setup functions
 def setup_object(obj: bpy.types.Object, scale_factor: float = 200) -> None:
     """Setup individual object properties."""
     obj.data.transform(Matrix.Scale(scale_factor, 4))
@@ -82,6 +83,56 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
                 bpy.data.materials.remove(current_mat)
 
 
+# Helper functions for object manipulation
+def _join_curves(collection: bpy.types.Collection, name: str) -> None:
+    """Helper function to join curves in a collection."""
+    bpy.ops.object.select_all(action="DESELECT")
+    for obj in collection.objects:
+        obj.select_set(True)
+    bpy.context.view_layer.objects.active = collection.objects[0]
+    bpy.ops.object.join()
+    bpy.context.active_object.name = name
+
+
+def _set_origins_to_geometry(collection: bpy.types.Collection) -> None:
+    """Helper function to set object origins to geometry."""
+    bpy.ops.object.select_all(action="DESELECT")
+    if not collection.objects:
+        return
+
+    bpy.context.view_layer.objects.active = collection.objects[0]
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+    for obj in collection.objects:
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+        bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="MEDIAN")
+        obj.select_set(False)
+
+
+def _convert_to_meshes(collection: bpy.types.Collection) -> None:
+    """Helper function to convert curves to meshes."""
+    for obj in collection.objects:
+        if obj.type != "CURVE":
+            continue
+
+        curve_data = obj.data
+        original_name = obj.name.replace("Curve", "")
+
+        bpy.context.view_layer.objects.active = obj
+        obj.select_set(True)
+
+        bpy.ops.object.convert(target="MESH")
+
+        new_name = f"Mesh{original_name}"
+        obj.name = new_name
+        obj.data.name = new_name
+
+        obj.select_set(False)
+        bpy.data.curves.remove(curve_data)
+
+
+# Main conversion functions
 def typst_to_blender_curves(
     typst_file: Path,
     scale_factor: float = 100.0,
@@ -148,54 +199,6 @@ def typst_to_blender_curves(
         _convert_to_meshes(imported_collection)
 
     return imported_collection
-
-
-def _join_curves(collection: bpy.types.Collection, name: str) -> None:
-    """Helper function to join curves in a collection."""
-    bpy.ops.object.select_all(action="DESELECT")
-    for obj in collection.objects:
-        obj.select_set(True)
-    bpy.context.view_layer.objects.active = collection.objects[0]
-    bpy.ops.object.join()
-    bpy.context.active_object.name = name
-
-
-def _set_origins_to_geometry(collection: bpy.types.Collection) -> None:
-    """Helper function to set object origins to geometry."""
-    bpy.ops.object.select_all(action="DESELECT")
-    if not collection.objects:
-        return
-
-    bpy.context.view_layer.objects.active = collection.objects[0]
-    bpy.ops.object.mode_set(mode="OBJECT")
-
-    for obj in collection.objects:
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
-        bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="MEDIAN")
-        obj.select_set(False)
-
-
-def _convert_to_meshes(collection: bpy.types.Collection) -> None:
-    """Helper function to convert curves to meshes."""
-    for obj in collection.objects:
-        if obj.type != "CURVE":
-            continue
-
-        curve_data = obj.data
-        original_name = obj.name.replace("Curve", "")
-
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
-
-        bpy.ops.object.convert(target="MESH")
-
-        new_name = f"Mesh{original_name}"
-        obj.name = new_name
-        obj.data.name = new_name
-
-        obj.select_set(False)
-        bpy.data.curves.remove(curve_data)
 
 
 def typst_express(

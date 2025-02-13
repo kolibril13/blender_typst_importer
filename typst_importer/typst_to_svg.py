@@ -14,6 +14,74 @@ bpy.types.Collection.processed_svg = bpy.props.StringProperty(
 )
 
 
+def setup_object(obj: bpy.types.Object, scale_factor: float = 200) -> None:
+    """Setup individual object properties."""
+    obj.data.transform(Matrix.Scale(scale_factor, 4))
+    obj["my_opacity"] = 1.0
+    obj.id_properties_ui("my_opacity").update(min=0.0, max=1.0, step=0.1)
+
+
+def create_material(color, name: str = "") -> bpy.types.Material:
+    """Create a new material with nodes setup for opacity."""
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+
+    nodes.clear()
+
+    output = nodes.new("ShaderNodeOutputMaterial")
+    output.location = (300, 0)
+    principled = nodes.new("ShaderNodeBsdfPrincipled")
+    principled.location = (0, 0)
+
+    attr_node = nodes.new("ShaderNodeAttribute")
+    attr_node.attribute_name = "my_opacity"
+    attr_node.attribute_type = "OBJECT"
+    attr_node.location = (-300, -100)
+
+    principled.inputs["Base Color"].default_value = color
+
+    links.new(principled.outputs["BSDF"], output.inputs["Surface"])
+    links.new(attr_node.outputs["Fac"], principled.inputs["Alpha"])
+
+    return mat
+
+
+def deduplicate_materials(collection: bpy.types.Collection) -> None:
+    """
+    Deduplicate materials in a collection by reusing identical materials and giving them descriptive names.
+
+    Args:
+        collection: The collection containing objects whose materials need deduplication
+    """
+    materials_dict = {}
+
+    for obj in collection.objects:
+        if not obj.data.materials:
+            continue
+
+        current_mat = obj.data.materials[0]
+        mat_key = tuple(current_mat.diffuse_color)
+
+        if mat_key in materials_dict:
+            obj.data.materials.clear()
+            obj.data.materials.append(materials_dict[mat_key])
+        else:
+            rgb = current_mat.diffuse_color[:3]
+            hex_color = "".join(f"{int(c*255):02x}" for c in rgb)
+            new_mat = create_material(
+                current_mat.diffuse_color, f"Mat{len(materials_dict)}_#{hex_color}"
+            )
+            materials_dict[mat_key] = new_mat
+
+            obj.data.materials.clear()
+            obj.data.materials.append(new_mat)
+
+            if current_mat.users == 0:
+                bpy.data.materials.remove(current_mat)
+
+
 def typst_to_blender_curves(
     typst_file: Path,
     scale_factor: float = 100.0,
@@ -64,9 +132,11 @@ def typst_to_blender_curves(
     imported_collection.name = f"Typst_{file_name_without_ext}"
     imported_collection.processed_svg = processed_svg
 
-    # Scale the imported curves
+    # Setup objects and materials
     for obj in imported_collection.objects:
-        obj.data.transform(Matrix.Scale(scale_factor, 4))
+        setup_object(obj, scale_factor)
+
+    deduplicate_materials(imported_collection)
 
     if join_curves and len(imported_collection.objects) > 1:
         _join_curves(imported_collection, file_name_without_ext)

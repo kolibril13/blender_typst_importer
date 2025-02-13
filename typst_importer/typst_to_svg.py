@@ -87,9 +87,9 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
             if current_mat.users == 0:
                 bpy.data.materials.remove(current_mat)
 
-    # # Clean up any remaining unused materials
-    # for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
-    #     bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
+    # Clean up any remaining unused materials
+    for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
+        bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
 
 
 # Helper functions for object manipulation

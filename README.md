@@ -95,9 +95,10 @@ for i in range(0,10):
 ```py
 c = typst_express("$ . . . $", scale_factor=100, origin_to_char=False, convert_to_mesh=True)
 ```
-
 * Better handeling of materials. (see https://projects.blender.org/blender/blender/issues/134451)
 * Every element has now a default "opacity" property
+
+
 
 ## v 0.1.1
 

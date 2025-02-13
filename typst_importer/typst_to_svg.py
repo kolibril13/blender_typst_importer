@@ -24,6 +24,11 @@ def setup_object(obj: bpy.types.Object, scale_factor: float = 200) -> None:
 
 def create_material(color, name: str = "") -> bpy.types.Material:
     """Create a new material with nodes setup for opacity."""
+    # Check if material with this name already exists
+    existing_mat = bpy.data.materials.get(name)
+    if existing_mat:
+        return existing_mat
+        
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
@@ -76,9 +81,15 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
         else:
             rgb = current_mat.diffuse_color[:3]
             hex_color = "".join(f"{int(c*255):02x}" for c in rgb)
-            new_mat = create_material(
-                current_mat.diffuse_color, f"Mat{len(materials_dict)}_#{hex_color}"
-            )
+            mat_name = f"Mat{len(materials_dict)}_#{hex_color}"
+            
+            # Check if material already exists in Blender
+            existing_mat = bpy.data.materials.get(mat_name)
+            if existing_mat:
+                new_mat = existing_mat
+            else:
+                new_mat = create_material(current_mat.diffuse_color, mat_name)
+                
             materials_dict[mat_key] = new_mat
 
             obj.data.materials.clear()

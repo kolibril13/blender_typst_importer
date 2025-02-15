@@ -89,6 +89,10 @@ for i in range(0,10):
 
 # Changelog
 
+## v 0.1.3
+
+added `lxml` dependency
+
 ## v 0.1.2
 
 * new function: convert from curve to mesh : `convert_to_mesh`

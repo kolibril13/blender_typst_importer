@@ -4,7 +4,7 @@ version = "0.0.1"  # Placeholder; the real version is defined in blender_manifes
 description = "Blender extension to render Typst files"
 license = { text = "AGPL-3.0-or-later" }
 readme = "README.md"
-dependencies = ["typst", "svg.path"]
+dependencies = ["typst", "svg.path" , "lxml"]
 requires-python = ">=3.11.0,<3.12"
 keywords = ["blender", "python", "typst"]
 maintainers = [

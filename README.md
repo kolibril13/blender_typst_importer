@@ -89,6 +89,18 @@ for i in range(0,10):
 
 # Changelog
 
+## v 0.1.4
+
+* new position argument:
+
+```py
+typst_express(
+    "hi",
+    name="Example",
+    position=(2, 2, 0),  # Place 2 units to the right
+)
+```
+
 ## v 0.1.3
 
 added `lxml` dependency

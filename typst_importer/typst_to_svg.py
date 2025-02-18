@@ -1,12 +1,12 @@
 from pathlib import Path
 import tempfile
-from typing import Optional
+from typing import Optional, Tuple
 
 from mathutils import Matrix
 import bpy
 import typst
 from .svg_preprocessing import preprocess_svg
-print("Importing typst_to_svg.py")
+
 # Register the property for collections
 bpy.types.Collection.processed_svg = bpy.props.StringProperty(
     name="Processed SVG",
@@ -28,7 +28,7 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     existing_mat = bpy.data.materials.get(name)
     if existing_mat:
         return existing_mat
-        
+
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
@@ -65,7 +65,7 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
     # # Clean up any remaining unused materials that might have been created before
     # for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
     #     bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
-    
+
     materials_dict = {}
 
     for obj in collection.objects:
@@ -82,14 +82,14 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
             rgb = current_mat.diffuse_color[:3]
             hex_color = "".join(f"{int(c*255):02x}" for c in rgb)
             mat_name = f"Mat{len(materials_dict)}_#{hex_color}"
-            
+
             # Check if material already exists in Blender
             existing_mat = bpy.data.materials.get(mat_name)
             if existing_mat:
                 new_mat = existing_mat
             else:
                 new_mat = create_material(current_mat.diffuse_color, mat_name)
-                
+
             materials_dict[mat_key] = new_mat
 
             obj.data.materials.clear()
@@ -100,7 +100,9 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
 
     # Clean up any remaining unused materials
     for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
-        bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
+        bpy.ops.outliner.orphans_purge(
+            do_recursive=True
+        )  # TODO : not very tested, and might delete some materials unintended
 
 
 # Helper functions for object manipulation
@@ -162,6 +164,7 @@ def typst_to_blender_curves(
     origin_to_char: bool = False,
     join_curves: bool = False,
     convert_to_mesh: bool = False,
+    position: Optional[Tuple[float, float, float]] = None,
 ) -> bpy.types.Collection:
     """
     Compile a .txt or .typ file to an SVG using Typst,
@@ -173,6 +176,7 @@ def typst_to_blender_curves(
         origin_to_char (bool, optional): If True, set the origin of each object to its geometry. Defaults to False.
         join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
         convert_to_mesh (bool, optional): If True, convert curves to meshes. Defaults to False.
+        position (Optional[Tuple[float, float, float]], optional): Position (x,y,z) to place the content. Defaults to None.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender curves.
@@ -220,6 +224,13 @@ def typst_to_blender_curves(
 
     if convert_to_mesh:
         _convert_to_meshes(imported_collection)
+    # Position the collection if coordinates are provided
+    if position is not None:
+        for obj in imported_collection.objects:
+            # Transform the object data to move it
+            obj.data.transform(
+                Matrix.Translation((position[0], position[1], position[2]))
+            )
 
     # Final cleanup of any remaining unused data
     # bpy.ops.outliner.orphans_purge(do_recursive=True)
@@ -235,6 +246,7 @@ def typst_express(
     origin_to_char: bool = False,
     join_curves: bool = False,
     convert_to_mesh: bool = False,
+    position: Optional[Tuple[float, float, float]] = None,
 ) -> bpy.types.Collection:
     """
     Create Blender curves from Typst content.
@@ -248,6 +260,7 @@ def typst_express(
         origin_to_char (bool, optional): If True, set the origin of each object to its geometry. Defaults to False.
         join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
         convert_to_mesh (bool, optional): If True, convert curves to meshes. Defaults to False.
+        position (Optional[Tuple[float, float, float]], optional): Position (x,y,z) to place the content. Defaults to None.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender curves.
@@ -264,7 +277,7 @@ def typst_express(
 
     # Convert to Blender curves
     collection = typst_to_blender_curves(
-        temp_file, scale_factor, origin_to_char, join_curves, convert_to_mesh
+        temp_file, scale_factor, origin_to_char, join_curves, convert_to_mesh, position
     )
     collection.name = name
 

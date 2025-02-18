@@ -101,6 +101,8 @@ typst_express(
 )
 ```
 
+(maybe)   "Snap XY to Active" operator
+
 ## v 0.1.3
 
 added `lxml` dependency

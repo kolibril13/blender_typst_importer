@@ -6,6 +6,7 @@ from mathutils import Matrix
 import bpy
 import typst
 from .svg_preprocessing import preprocess_svg
+import contextlib
 
 # Register the property for collections
 bpy.types.Collection.processed_svg = bpy.props.StringProperty(
@@ -99,7 +100,9 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
                 bpy.data.materials.remove(current_mat)
 
     # Clean up any remaining unused materials
-    for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
+    # for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
+    with contextlib.redirect_stdout(None):
+
         bpy.ops.outliner.orphans_purge(
             do_recursive=True
         )  # TODO : not very tested, and might delete some materials unintended
@@ -227,9 +230,11 @@ def typst_to_blender_curves(
     # Position the collection if coordinates are provided
     if position is not None:
         for obj in imported_collection.objects:
-            # Transform the object data to move it
-            obj.data.transform(
-                Matrix.Translation((position[0], position[1], position[2]))
+            # Add position as an offset to current location
+            obj.location = (
+                obj.location[0] + position[0],
+                obj.location[1] + position[1],
+                obj.location[2] + position[2],
             )
 
     # Final cleanup of any remaining unused data

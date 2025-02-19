@@ -40,15 +40,11 @@ class OBJECT_OT_align_to_active(bpy.types.Operator):
 class OBJECT_OT_align_collection(bpy.types.Operator):
     """
     Aligns a collection of objects by moving them based on the active object's location.
-    
+
     Usage:
-    1. Select two objects in this order:
-       - First: The source object (Object A)
-       - Last: The target object (Object B, active)
-    2. Run the operator to move all objects in Object A's collection(s)
-       - Objects will move by the same X/Y offset as Object A to Object B
-       - Z coordinates remain unchanged
-    3. Object B's position stays fixed
+    1. Select one or more objects to align (from collection A)
+    2. Select the target object last (making it active, Object B)
+    3. Run the operator to move Object A's collection to align with Object B
     """
     bl_idname = "object.align_collection_xy"
     bl_label = "Align Collection (XY)"

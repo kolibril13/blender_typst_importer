@@ -30,9 +30,73 @@ class OBJECT_OT_snap_xy(bpy.types.Operator):
                 obj.location.y = target_loc.y
         return {'FINISHED'}
 
-# Add a menu entry in the Object menu with a nice icon.
+class OBJECT_OT_move_group_relative(bpy.types.Operator):
+    """
+    Move Object A to Object B and shift all objects in the same collection(s)
+    as Object A by the same translation vector (only for X and Y; Z remains unchanged).
+
+    Steps:
+    1. Select exactly two objects:
+       - First: Object A (source, non-active)
+       - Second: Object B (destination, active)
+    2. Compute delta = B.location - A.location.
+    3. For every object in all of A's collections (except B), add delta.x and delta.y 
+       to its X and Y coordinates respectively.
+    """
+    bl_idname = "object.move_group_relative"
+    bl_label = "Move Group Relative (XY Only)"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    @classmethod
+    def poll(cls, context):
+        return (context.area is not None and 
+                context.area.type == 'VIEW_3D' and 
+                context.active_object is not None)
+
+    def execute(self, context):
+        # Ensure exactly 2 objects are selected.
+        if len(context.selected_objects) != 2:
+            self.report({'WARNING'}, "Select exactly 2 objects: source (Object A) and destination (Object B)")
+            return {'CANCELLED'}
+        
+        destination = context.active_object  # Object B
+        # Determine the source object (Object A) as the other selected object.
+        source = next((obj for obj in context.selected_objects if obj != destination), None)
+        if source is None:
+            self.report({'WARNING'}, "Source object could not be determined.")
+            return {'CANCELLED'}
+        
+        # Compute the translation vector from A to B.
+        delta = destination.location - source.location
+
+        # Gather all objects in every collection that Object A is a member of.
+        objects_to_move = set()
+        if source.users_collection:
+            for coll in source.users_collection:
+                objects_to_move.update(coll.objects)
+        else:
+            # In case the source isn't in any collection (rare), move just the source.
+            objects_to_move.add(source)
+        
+        # Move each object by delta only in the X and Y axes, except for the destination.
+        for obj in objects_to_move:
+            if obj == destination:
+                continue
+            obj.location.x += delta.x
+            obj.location.y += delta.y
+
+        return {'FINISHED'}
+
+# Add menu entries
 def snap_xy_menu_func(self, context):
     self.layout.operator(OBJECT_OT_snap_xy.bl_idname, text="Snap XY to Active", icon='SNAP_NORMAL')
+
+def move_group_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_move_group_relative.bl_idname,
+        text="Shift Collection (XY)",
+        icon='GROUP'
+    )
 
 # Import the helper function from typst_to_svg.py
 from .typst_to_svg import typst_to_blender_curves
@@ -113,9 +177,11 @@ def register():
     # Register Blender classes (operators and file handler)
     # 1. XY snapping operator for aligning objects
     bpy.utils.register_class(OBJECT_OT_snap_xy)
-    # 2. Main Typst import operator that handles file selection and import
+    # 2. Group movement operator
+    bpy.utils.register_class(OBJECT_OT_move_group_relative)
+    # 3. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 3. File handler for drag-and-drop support of .txt/.typ files
+    # 4. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
 
     # Add menu entries
@@ -123,14 +189,17 @@ def register():
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
     # 2. Add XY snapping to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
+    # 3. Add group movement to the Object menu
+    bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
     
-    # Set up keyboard shortcut
-    # Create a new keymap for the XY snap operator in Object Mode
+    # Set up keyboard shortcuts
     wm = bpy.context.window_manager
     km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
     # Bind the 'J' key to trigger the XY snap operator
     kmi = km.keymap_items.new(OBJECT_OT_snap_xy.bl_idname, type='J', value='PRESS')
-    # Store keymap for proper cleanup on unregister
+    addon_keymaps.append((km, kmi))
+    # Bind the 'L' key to trigger the group movement operator
+    kmi = km.keymap_items.new(OBJECT_OT_move_group_relative.bl_idname, type='L', value='PRESS')
     addon_keymaps.append((km, kmi))
 
 
@@ -146,10 +215,13 @@ def unregister():
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     # 2. Remove from Object menu
     bpy.types.VIEW3D_MT_object.remove(snap_xy_menu_func)
+    # 3. Remove group movement from Object menu
+    bpy.types.VIEW3D_MT_object.remove(move_group_menu_func)
 
     # Unregister Blender classes in reverse order
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
+    bpy.utils.unregister_class(OBJECT_OT_move_group_relative)
     bpy.utils.unregister_class(OBJECT_OT_snap_xy)
 
 

@@ -101,8 +101,8 @@ typst_express(
 )
 ```
 
-* add "Snap XY to Active" operator. This can be used by the keyboard shortcut j, or by  "Object -> Snap XY to Active"
-
+* add "Snap XY to Active" operator.  Keyboard shortcut j, or by  "Object -> Snap XY to Active"
+* add "Move Group Relative (XY Only)". Keyboard shortcut l, or by  "Object -> Move Group Relative (XY Only)" 
 
 ## v 0.1.3
 

@@ -8,10 +8,17 @@ import time
 # Global list to store our keymap entries for cleanup.
 addon_keymaps = []
 
-class OBJECT_OT_snap_xy(bpy.types.Operator):
-    """Snap selected objects' X and Y to the active object's X and Y location (Z remains unchanged)"""
-    bl_idname = "object.snap_xy"
-    bl_label = "Snap XY to Active"
+class OBJECT_OT_align_to_active(bpy.types.Operator):
+    """
+    Aligns selected objects' X and Y coordinates to match the active object's location, while preserving Z coordinates.
+
+    Usage:
+    1. Select one or more objects to align
+    2. Select the target object last (making it active)
+    3. Run the operator to align all selected objects to the active object's XY position
+    """
+    bl_idname = "object.align_object_xy"
+    bl_label = "Align Object (XY)"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -30,21 +37,21 @@ class OBJECT_OT_snap_xy(bpy.types.Operator):
                 obj.location.y = target_loc.y
         return {'FINISHED'}
 
-class OBJECT_OT_move_group_relative(bpy.types.Operator):
+class OBJECT_OT_align_collection(bpy.types.Operator):
     """
-    Move Object A to Object B and shift all objects in the same collection(s)
-    as Object A by the same translation vector (only for X and Y; Z remains unchanged).
-
-    Steps:
-    1. Select exactly two objects:
-       - First: Object A (source, non-active)
-       - Second: Object B (destination, active)
-    2. Compute delta = B.location - A.location.
-    3. For every object in all of A's collections (except B), add delta.x and delta.y 
-       to its X and Y coordinates respectively.
+    Aligns a collection of objects by moving them based on the active object's location.
+    
+    Usage:
+    1. Select two objects in this order:
+       - First: The source object (Object A)
+       - Last: The target object (Object B, active)
+    2. Run the operator to move all objects in Object A's collection(s)
+       - Objects will move by the same X/Y offset as Object A to Object B
+       - Z coordinates remain unchanged
+    3. Object B's position stays fixed
     """
-    bl_idname = "object.move_group_relative"
-    bl_label = "Move Group Relative (XY Only)"
+    bl_idname = "object.align_collection_xy"
+    bl_label = "Align Collection (XY)"
     bl_options = {'REGISTER', 'UNDO'}
 
     @classmethod
@@ -89,12 +96,12 @@ class OBJECT_OT_move_group_relative(bpy.types.Operator):
 
 # Add menu entries
 def snap_xy_menu_func(self, context):
-    self.layout.operator(OBJECT_OT_snap_xy.bl_idname, text="Snap XY to Active", icon='SNAP_NORMAL')
+    self.layout.operator(OBJECT_OT_align_to_active.bl_idname, text="Align Object (XY)", icon='SNAP_NORMAL')
 
 def move_group_menu_func(self, context):
     self.layout.operator(
-        OBJECT_OT_move_group_relative.bl_idname,
-        text="Shift Collection (XY)",
+        OBJECT_OT_align_collection.bl_idname,
+        text="Align Collection (XY)",
         icon='GROUP'
     )
 
@@ -176,9 +183,9 @@ def register():
 
     # Register Blender classes (operators and file handler)
     # 1. XY snapping operator for aligning objects
-    bpy.utils.register_class(OBJECT_OT_snap_xy)
+    bpy.utils.register_class(OBJECT_OT_align_to_active)
     # 2. Group movement operator
-    bpy.utils.register_class(OBJECT_OT_move_group_relative)
+    bpy.utils.register_class(OBJECT_OT_align_collection)
     # 3. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
     # 4. File handler for drag-and-drop support of .txt/.typ files
@@ -196,10 +203,10 @@ def register():
     wm = bpy.context.window_manager
     km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
     # Bind the 'J' key to trigger the XY snap operator
-    kmi = km.keymap_items.new(OBJECT_OT_snap_xy.bl_idname, type='J', value='PRESS')
+    kmi = km.keymap_items.new(OBJECT_OT_align_to_active.bl_idname, type='J', value='PRESS')
     addon_keymaps.append((km, kmi))
     # Bind the 'L' key to trigger the group movement operator
-    kmi = km.keymap_items.new(OBJECT_OT_move_group_relative.bl_idname, type='L', value='PRESS')
+    kmi = km.keymap_items.new(OBJECT_OT_align_collection.bl_idname, type='L', value='PRESS')
     addon_keymaps.append((km, kmi))
 
 
@@ -221,8 +228,8 @@ def unregister():
     # Unregister Blender classes in reverse order
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
-    bpy.utils.unregister_class(OBJECT_OT_move_group_relative)
-    bpy.utils.unregister_class(OBJECT_OT_snap_xy)
+    bpy.utils.unregister_class(OBJECT_OT_align_collection)
+    bpy.utils.unregister_class(OBJECT_OT_align_to_active)
 
 
 if __name__ == "__main__":

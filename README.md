@@ -93,6 +93,9 @@ for i in range(0,10):
 
 * new position argument:
 
+* add "Allign Object" operator.  Keyboard shortcut j, or  "Object -> Allign Object (XY)"
+* add "Allign Collection". Keyboard shortcut l, or "Object -> Allign Collection (XY)" 
+
 ```py
 typst_express(
     "hi",
@@ -100,9 +103,31 @@ typst_express(
     position=(2, 2, 0),  # Place 2 units to the right
 )
 ```
+* Extra: Here's a snippet to position equation:
+```py
+from typst_importer.typst_to_svg import typst_express
+def eq(equation: str, name: str, color: str, position=(0, 0, 0)):
 
-* add "Snap XY to Active" operator.  Keyboard shortcut j, or by  "Object -> Snap XY to Active"
-* add "Move Group Relative (XY Only)". Keyboard shortcut l, or by  "Object -> Move Group Relative (XY Only)" 
+    typst_code = f"""
+    #set text({color})
+    $ {equation} $
+    """
+    collection = typst_express(
+        typst_code,
+        origin_to_char=True,
+        convert_to_mesh=True,
+        name=name,
+        position=position
+    )
+
+    return collection
+
+
+eq("a -b = c", "Start", "aqua", (0, -4, 0.5))
+eq("a - 3 r_(beta) = c", "End", "olive", (0, -4, 0));
+```
+
+
 
 ## v 0.1.3
 

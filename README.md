@@ -101,7 +101,8 @@ typst_express(
 )
 ```
 
-(maybe)   "Snap XY to Active" operator
+* add "Snap XY to Active" operator. This can be used by the keyboard shortcut j, or by  "Object -> Snap XY to Active"
+
 
 ## v 0.1.3
 

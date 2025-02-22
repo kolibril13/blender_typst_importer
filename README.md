@@ -89,6 +89,10 @@ for i in range(0,10):
 
 # Changelog
 
+## v0.1.5
+
+* update to typst 0.13.0
+  
 ## v 0.1.4
 
 * new position argument:

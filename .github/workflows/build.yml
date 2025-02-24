@@ -14,7 +14,7 @@ jobs:
       matrix:
         version: [4.2, 4.3]
     env:
-      ADDON_NAME: csv_importer
+      ADDON_NAME: typst_importer
     steps:
       - uses: actions/checkout@v3
       - uses: SebRollen/toml-action@v1.2.0

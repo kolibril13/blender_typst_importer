@@ -1,0 +1,39 @@
+name: Run Tests
+
+on: 
+    push:
+      branches: ["main"]
+    pull_request:
+      branches: ["*"]
+    
+jobs:
+    build:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            max-parallel: 4
+            fail-fast: false
+            matrix:
+              version: ["4.2.5", "4.3.2", "daily"]
+              os: [macos-14, windows-latest, ubuntu-latest]
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: BradyAJohnston/setup-blender@v2.1
+              with:
+                version: ${{ matrix.version }}
+            - name: Install in Blender
+              run: blender -b -P tests/python.py -- -m pip install ".[test]"
+            - name: Run Tests in Blender
+              run: blender -b -P tests/run.py -- -vv tests --cov --cov-report=xml
+    
+            - name: Upload coverage to Codecov
+              uses: codecov/codecov-action@v5
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
+            
+            - name: Upload test results to Codecov
+              if: ${{ !cancelled() }}
+              uses: codecov/test-results-action@v1
+              with:
+                token: ${{ secrets.CODECOV_TOKEN }}
+    

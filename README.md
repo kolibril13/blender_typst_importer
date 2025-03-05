@@ -91,8 +91,23 @@ for i in range(0,10):
 
 ## v0.1.6
 
+* Added object indices support with blue numbered labels.
 
-* Support for 
+```py
+from typst_importer.typst_to_svg import typst_express
+
+content = "$ a = b + c $" 
+c = typst_express(content, origin_to_char=True, show_indices=True, 
+position=(0, 2, 0), name="Simple")
+```
+
+
+```py
+content = "$ limits(integral)_a^b f(x) dif x $" 
+c = typst_express(content, origin_to_char=True, show_indices=True, 
+name="Integral")
+```
+
 ![image](https://github.com/user-attachments/assets/60186484-a88d-4654-9346-d0f9b3ff9e57)
 
 

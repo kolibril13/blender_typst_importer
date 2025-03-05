@@ -89,6 +89,13 @@ for i in range(0,10):
 
 # Changelog
 
+## v0.1.6
+
+
+* Support for 
+![image](https://github.com/user-attachments/assets/60186484-a88d-4654-9346-d0f9b3ff9e57)
+
+
 ## v0.1.5
 
 * update to typst 0.13.0

@@ -72,11 +72,20 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
         # Compute the translation vector from A to B.
         delta = destination.location - source.location
 
-        # Gather all objects in every collection that Object A is a member of.
+        # Gather all objects in every collection that Object A is a member of,
+        # including objects in sub-collections.
         objects_to_move = set()
+        
+        def gather_objects_from_collection(collection):
+            # Add objects directly in this collection
+            objects_to_move.update(collection.objects)
+            # Recursively process sub-collections
+            for child_collection in collection.children:
+                gather_objects_from_collection(child_collection)
+        
         if source.users_collection:
             for coll in source.users_collection:
-                objects_to_move.update(coll.objects)
+                gather_objects_from_collection(coll)
         else:
             # In case the source isn't in any collection (rare), move just the source.
             objects_to_move.add(source)

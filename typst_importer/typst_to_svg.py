@@ -168,6 +168,7 @@ def typst_to_blender_curves(
     join_curves: bool = False,
     convert_to_mesh: bool = False,
     position: Optional[Tuple[float, float, float]] = None,
+    show_indices: bool = False,
 ) -> bpy.types.Collection:
     """
     Compile a .txt or .typ file to an SVG using Typst,
@@ -180,6 +181,7 @@ def typst_to_blender_curves(
         join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
         convert_to_mesh (bool, optional): If True, convert curves to meshes. Defaults to False.
         position (Optional[Tuple[float, float, float]], optional): Position (x,y,z) to place the content. Defaults to None.
+        show_indices (bool, optional): If True, add red text indices to each object for visual reference. Defaults to False.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender curves.
@@ -227,6 +229,7 @@ def typst_to_blender_curves(
 
     if convert_to_mesh:
         _convert_to_meshes(imported_collection)
+        
     # Position the collection if coordinates are provided
     if position is not None:
         for obj in imported_collection.objects:
@@ -236,6 +239,36 @@ def typst_to_blender_curves(
                 obj.location[1] + position[1],
                 obj.location[2] + position[2],
             )
+            
+    # Add index labels if requested
+    if show_indices:
+        # Create a new collection for indices if there are multiple objects
+        if len(imported_collection.objects) > 1:
+            indices_collection = bpy.data.collections.new(f"{imported_collection.name}_Indices")
+            bpy.context.scene.collection.children.link(indices_collection)
+            
+            for i, obj in enumerate(imported_collection.objects):
+                # Create text object at the same location as the curve/mesh
+                bpy.ops.object.text_add(location=obj.location)
+                text_obj = bpy.context.active_object
+                text_obj.data.body = str(i)
+                text_obj.name = f"Index_{i}"
+                
+                # Set text color to red
+                if "Index_Material" not in bpy.data.materials:
+                    mat = bpy.data.materials.new("Index_Material")
+                    mat.diffuse_color = (1.0, 0.0, 0.0, 1.0)  # Red color
+                else:
+                    mat = bpy.data.materials["Index_Material"]
+                
+                if text_obj.data.materials:
+                    text_obj.data.materials[0] = mat
+                else:
+                    text_obj.data.materials.append(mat)
+                
+                # Move from scene collection to indices collection
+                bpy.context.scene.collection.objects.unlink(text_obj)
+                indices_collection.objects.link(text_obj)
 
     # Final cleanup of any remaining unused data
     # bpy.ops.outliner.orphans_purge(do_recursive=True)
@@ -252,6 +285,7 @@ def typst_express(
     join_curves: bool = False,
     convert_to_mesh: bool = False,
     position: Optional[Tuple[float, float, float]] = None,
+    show_indices: bool = False,
 ) -> bpy.types.Collection:
     """
     Create Blender curves from Typst content.
@@ -266,6 +300,7 @@ def typst_express(
         join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
         convert_to_mesh (bool, optional): If True, convert curves to meshes. Defaults to False.
         position (Optional[Tuple[float, float, float]], optional): Position (x,y,z) to place the content. Defaults to None.
+        show_indices (bool, optional): If True, add red text indices to each object for visual reference. Defaults to False.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender curves.
@@ -282,7 +317,7 @@ def typst_express(
 
     # Convert to Blender curves
     collection = typst_to_blender_curves(
-        temp_file, scale_factor, origin_to_char, join_curves, convert_to_mesh, position
+        temp_file, scale_factor, origin_to_char, join_curves, convert_to_mesh, position, show_indices
     )
     collection.name = name
 

@@ -32,6 +32,9 @@ def create_material(color, name: str = "") -> bpy.types.Material:
 
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
+    mat.blend_method = 'BLEND'
+
+
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
 
@@ -181,9 +184,6 @@ def add_indices_to_collection(imported_collection):
         # Link the indices collection as a child of the imported_collection instead of scene collection
         imported_collection.children.link(indices_collection)
         
-        # Store the y-coordinate of the first object to align all indices
-        first_y_coordinate = None
-        
         for i, obj in enumerate(imported_collection.objects):
             # Create text object at the same location as the curve/mesh
             bpy.ops.object.text_add(location=(0,0,0))
@@ -206,12 +206,8 @@ def add_indices_to_collection(imported_collection):
                 text_obj.data.materials[0] = mat
             else:
                 text_obj.data.materials.append(mat)
-            
-            # If this is the first object, store its y-coordinate
-            if i == 0:
-                first_y_coordinate = obj.location[1]
-                
-            # Set text position to obj.location with slight z offset, but use the first object's y-coordinate
+                            
+            # Set text position to obj.location with slight z offset
             text_obj.location = (obj.location[0], obj.location[1], obj.location[2] + 0.009)
             
             # Create background circle for the text

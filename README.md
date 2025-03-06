@@ -91,6 +91,8 @@ for i in range(0,10):
 
 ## v0.1.6
 
+
+* Change blend_method for transparency. "Dithered" looks more grany, and the new default "Blended" looks smoother.
 * Added object indices support with blue numbered labels.
 
 ```py

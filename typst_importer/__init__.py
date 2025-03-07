@@ -99,6 +99,28 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class OBJECT_OT_create_arc(bpy.types.Operator):
+    """
+    Creates an arc in the XY plane.
+    
+    Usage:
+    1. Run the operator to create an arc
+    """
+    bl_idname = "object.create_arc_xy"
+    bl_label = "Create Arc (XY)"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        return (context.area is not None and 
+                context.area.type == 'VIEW_3D')
+    
+    def execute(self, context):
+        # For now, just print hello world
+        print("Hello World")
+        self.report({'INFO'}, "Hello World")
+        return {'FINISHED'}
+
 # Add menu entries
 def snap_xy_menu_func(self, context):
     self.layout.operator(OBJECT_OT_align_to_active.bl_idname, text="Align Object (XY)", icon='SNAP_NORMAL')
@@ -108,6 +130,13 @@ def move_group_menu_func(self, context):
         OBJECT_OT_align_collection.bl_idname,
         text="Align Collection (XY)",
         icon='GROUP'
+    )
+
+def create_arc_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_create_arc.bl_idname,
+        text="Create Arc (XY)",
+        icon='CURVE_BEZCIRCLE'
     )
 
 # Import the helper function from typst_to_svg.py
@@ -191,17 +220,21 @@ def register():
     bpy.utils.register_class(OBJECT_OT_align_to_active)
     # 2. Group movement operator
     bpy.utils.register_class(OBJECT_OT_align_collection)
-    # 3. Main Typst import operator that handles file selection and import
+    # 3. Arc creation operator
+    bpy.utils.register_class(OBJECT_OT_create_arc)
+    # 4. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 4. File handler for drag-and-drop support of .txt/.typ files
+    # 5. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
 
     # Add menu entries
     # 1. Add Typst importer to the File > Import menu
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
-    # 2. Add XY snapping to the Object menu
+    # 2. Add arc creation to the Object menu
+    bpy.types.VIEW3D_MT_object.prepend(create_arc_menu_func)
+    # 3. Add XY snapping to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
-    # 3. Add group movement to the Object menu
+    # 4. Add group movement to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
     
     # Set up keyboard shortcuts
@@ -229,10 +262,13 @@ def unregister():
     bpy.types.VIEW3D_MT_object.remove(snap_xy_menu_func)
     # 3. Remove group movement from Object menu
     bpy.types.VIEW3D_MT_object.remove(move_group_menu_func)
+    # 4. Remove arc creation from Object menu
+    bpy.types.VIEW3D_MT_object.remove(create_arc_menu_func)
 
     # Unregister Blender classes in reverse order
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
+    bpy.utils.unregister_class(OBJECT_OT_create_arc)
     bpy.utils.unregister_class(OBJECT_OT_align_collection)
     bpy.utils.unregister_class(OBJECT_OT_align_to_active)
 

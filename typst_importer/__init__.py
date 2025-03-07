@@ -9,6 +9,76 @@ import time
 addon_keymaps = []
 
 
+
+class OBJECT_OT_create_arc(bpy.types.Operator):
+    """
+    Creates an arc in the XY plane.
+
+    Usage:
+    1. Select two objects
+    2. Run the operator to create an arc between them in the XY plane
+    """
+
+    bl_idname = "object.create_arc_xy"
+    bl_label = "Create Arc (XY)"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return (
+            context.area is not None 
+            and context.area.type == "VIEW_3D"
+            and len(context.selected_objects) == 2
+            and context.active_object is not None
+        )
+
+    def execute(self, context):
+        # Get the active object
+        active_obj = context.active_object
+        active_loc = active_obj.location.copy()
+        
+        # Get the other selected object
+        other_obj = next((obj for obj in context.selected_objects if obj != active_obj), None)
+        if not other_obj:
+            self.report({"WARNING"}, "Select exactly two objects")
+            return {"CANCELLED"}
+        
+        other_loc = other_obj.location.copy()
+        
+        # Create a curve between the two objects with Z=0
+        curve_data = bpy.data.curves.new(name='Arc', type='CURVE')
+        curve_data.dimensions = '3D'
+        
+        # Create a new spline in the curve
+        spline = curve_data.splines.new('BEZIER')
+        spline.bezier_points.add(1)  # Add one point (we already have one by default)
+        
+        # Set the first point to the active object's XY location (Z=0)
+        spline.bezier_points[0].co = (active_loc.x, active_loc.y, 0)
+        spline.bezier_points[0].handle_left_type = 'AUTO'
+        spline.bezier_points[0].handle_right_type = 'AUTO'
+        
+        # Set the second point to the other object's XY location (Z=0)
+        spline.bezier_points[1].co = (other_loc.x, other_loc.y, 0)
+        spline.bezier_points[1].handle_left_type = 'AUTO'
+        spline.bezier_points[1].handle_right_type = 'AUTO'
+        
+        # Create a new curve object
+        curve_obj = bpy.data.objects.new("Arc", curve_data)
+        
+        # Link the curve object to the current collection
+        bpy.context.collection.objects.link(curve_obj)
+        
+        # Select the new curve object and make it active
+        for obj in context.selected_objects:
+            obj.select_set(False)
+        curve_obj.select_set(True)
+        context.view_layer.objects.active = curve_obj
+        
+        self.report({"INFO"}, "Arc created in XY plane")
+        return {"FINISHED"}
+
+
 class OBJECT_OT_align_to_active(bpy.types.Operator):
     """
     Aligns selected objects' X and Y coordinates to match the active object's location, while preserving Z coordinates.
@@ -114,28 +184,6 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
 
         return {"FINISHED"}
 
-
-class OBJECT_OT_create_arc(bpy.types.Operator):
-    """
-    Creates an arc in the XY plane.
-
-    Usage:
-    1. Run the operator to create an arc
-    """
-
-    bl_idname = "object.create_arc_xy"
-    bl_label = "Create Arc (XY)"
-    bl_options = {"REGISTER", "UNDO"}
-
-    @classmethod
-    def poll(cls, context):
-        return context.area is not None and context.area.type == "VIEW_3D"
-
-    def execute(self, context):
-        # For now, just print hello world
-        print("Hello World")
-        self.report({"INFO"}, "Hello World")
-        return {"FINISHED"}
 
 
 # Add menu entries

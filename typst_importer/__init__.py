@@ -33,7 +33,7 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
     def execute(self, context):
         # Get the active object
         second_obj = context.active_object
-        second_loc = second_obj.location.copy()
+        second_co = second_obj.location.copy()
         
         # Get the other selected object
         first_obj = next((obj for obj in context.selected_objects if obj != second_obj), None)
@@ -41,7 +41,7 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
             self.report({"WARNING"}, "Select exactly two objects")
             return {"CANCELLED"}
         
-        first_loc = first_obj.location.copy()
+        first_co = first_obj.location.copy()
 
         curve_data = bpy.data.curves.new("BezierCurve", type="CURVE")
         curve_data.dimensions = "3D"
@@ -51,18 +51,18 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
 
         # Use the active and other object locations for the curve points
         # Use the Z coordinate from the other object for both points
-        spline.bezier_points[0].co = (second_loc.x, second_loc.y, first_loc.z)
-        spline.bezier_points[1].co = (first_loc.x, first_loc.y, first_loc.z)
+        spline.bezier_points[0].co = (second_co.x, second_co.y, first_co.z)
+        spline.bezier_points[1].co = (first_co.x, first_co.y, first_co.z)
 
         y = self.curve_height
 
         # Calculate midpoint for handle positioning
-        mid_x = (second_loc.x + first_loc.x) / 2
-        mid_y = (second_loc.y + first_loc.y) / 2
+        mid_x = (second_co.x + first_co.x) / 2
+        mid_y = (second_co.y + first_co.y) / 2
         
         # Calculate handle offset based on curve height
-        dx = first_loc.x - second_loc.x
-        dy = first_loc.y - second_loc.y
+        dx = first_co.x - second_co.x
+        dy = first_co.y - second_co.y
         
         # Create perpendicular vector for handle offset
         handle_offset_x = -dy * y
@@ -70,11 +70,11 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
 
         spline.bezier_points[0].handle_left_type = "FREE"
         spline.bezier_points[0].handle_right_type = "FREE"
-        spline.bezier_points[0].handle_left = (second_loc.x, second_loc.y, first_loc.z)
+        spline.bezier_points[0].handle_left = (second_co.x, second_co.y, first_co.z)
         spline.bezier_points[0].handle_right = (
             mid_x + handle_offset_x,
             mid_y + handle_offset_y,
-            first_loc.z
+            first_co.z
         )
 
         spline.bezier_points[1].handle_left_type = "FREE"
@@ -82,9 +82,9 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
         spline.bezier_points[1].handle_left = (
             mid_x + handle_offset_x,
             mid_y + handle_offset_y,
-            first_loc.z
+            first_co.z
         )
-        spline.bezier_points[1].handle_right = (first_loc.x, first_loc.y, first_loc.z)
+        spline.bezier_points[1].handle_right = (first_co.x, first_co.y, first_co.z)
 
         curve_obj = bpy.data.objects.new("BezierCurveObject", curve_data)
         context.collection.objects.link(curve_obj)

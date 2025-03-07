@@ -22,9 +22,9 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
     bl_label = "Create Arc (XY)"
     bl_options = {"REGISTER", "UNDO"}
 
-    z_value: bpy.props.FloatProperty(
-        name="Z Value",
-        description="Adjustable Z parameter for the curve handles",
+    curve_height: bpy.props.FloatProperty(
+        name="Curve Height",
+        description="Adjustable Z parameter that controls the arc's curvature",
         default=1.9,
         min=-10.0,
         max=10.0,
@@ -41,7 +41,7 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
         spline.bezier_points[0].co = (0, 0, 0)
         spline.bezier_points[1].co = (0, 2, 0)
 
-        z = self.z_value
+        z = self.curve_height
 
         spline.bezier_points[0].handle_left_type = "FREE"
         spline.bezier_points[0].handle_right_type = "FREE"

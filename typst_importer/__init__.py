@@ -12,12 +12,12 @@ addon_keymaps = []
 def create_bezier_curve(first_co, second_co, curve_height):
     """
     Creates a bezier curve between two points in the XY plane.
-    
+
     Args:
         first_co: The coordinates of the first point
         second_co: The coordinates of the second point
         curve_height: The height parameter that controls the arc's curvature
-        
+
     Returns:
         The created curve object
     """
@@ -36,11 +36,11 @@ def create_bezier_curve(first_co, second_co, curve_height):
     # Calculate midpoint for handle positioning
     mid_x = (first_co.x + second_co.x) / 2
     mid_y = (first_co.y + second_co.y) / 2
-    
+
     # Calculate handle offset based on curve height
-    dx = second_co.x - first_co.x  
-    dy = second_co.y - first_co.y  
-    
+    dx = second_co.x - first_co.x
+    dy = second_co.y - first_co.y
+
     # Create perpendicular vector for handle offset
     handle_offset_x = -dy * y
     handle_offset_y = dx * y
@@ -51,7 +51,7 @@ def create_bezier_curve(first_co, second_co, curve_height):
     spline.bezier_points[0].handle_right = (
         mid_x + handle_offset_x,
         mid_y + handle_offset_y,
-        first_co.z
+        first_co.z,
     )
 
     spline.bezier_points[1].handle_left_type = "FREE"
@@ -59,12 +59,12 @@ def create_bezier_curve(first_co, second_co, curve_height):
     spline.bezier_points[1].handle_left = (
         mid_x + handle_offset_x,
         mid_y + handle_offset_y,
-        first_co.z
+        first_co.z,
     )
     spline.bezier_points[1].handle_right = (second_co.x, second_co.y, first_co.z)
 
     curve_obj = bpy.data.objects.new("BezierCurveObject", curve_data)
-    
+
     return curve_obj
 
 
@@ -88,23 +88,26 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
         min=-10.0,
         max=10.0,
     )
+
     def execute(self, context):
-        # Get the active object
-        second_obj = context.active_object
-        second_co = second_obj.location.copy()
-        
-        # Get the other selected object
-        first_obj = next((obj for obj in context.selected_objects if obj != second_obj), None)
-        if not first_obj:
+
+        if len(context.selected_objects) != 2:
             self.report({"WARNING"}, "Select exactly two objects")
             return {"CANCELLED"}
-        
+
+        # Unpack the two objects
+        first_obj, second_obj = context.selected_objects
+
+        # Ensure `second_obj` is the *active* object
+        if second_obj != context.active_object:
+            first_obj, second_obj = second_obj, first_obj
+
         first_co = first_obj.location.copy()
+        second_co = second_obj.location.copy()
 
         # Create the bezier curve using the extracted function
         curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
-        
-        # Add the curve to the scene
+
         context.collection.objects.link(curve_obj)
 
         context.view_layer.objects.active = curve_obj

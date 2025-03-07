@@ -92,6 +92,8 @@ for i in range(0,10):
 
 * Change blend_method for transparency. "Dithered" looks more grany, and the new default "Blended" looks smoother.
 
+* update to typst 0.13.1
+* 
 * Added object indices support with blue numbered labels.
 
 ```py

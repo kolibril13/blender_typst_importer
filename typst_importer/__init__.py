@@ -9,6 +9,65 @@ import time
 addon_keymaps = []
 
 
+def create_bezier_curve(first_co, second_co, curve_height):
+    """
+    Creates a bezier curve between two points in the XY plane.
+    
+    Args:
+        first_co: The coordinates of the first point
+        second_co: The coordinates of the second point
+        curve_height: The height parameter that controls the arc's curvature
+        
+    Returns:
+        The created curve object
+    """
+    curve_data = bpy.data.curves.new("BezierCurve", type="CURVE")
+    curve_data.dimensions = "3D"
+
+    spline = curve_data.splines.new("BEZIER")
+    spline.bezier_points.add(1)
+
+    spline.bezier_points[0].co = (first_co.x, first_co.y, first_co.z)
+    spline.bezier_points[1].co = (second_co.x, second_co.y, first_co.z)
+
+    # Invert the curve height for correct arc direction
+    y = -curve_height
+
+    # Calculate midpoint for handle positioning
+    mid_x = (first_co.x + second_co.x) / 2
+    mid_y = (first_co.y + second_co.y) / 2
+    
+    # Calculate handle offset based on curve height
+    dx = second_co.x - first_co.x  
+    dy = second_co.y - first_co.y  
+    
+    # Create perpendicular vector for handle offset
+    handle_offset_x = -dy * y
+    handle_offset_y = dx * y
+
+    spline.bezier_points[0].handle_left_type = "FREE"
+    spline.bezier_points[0].handle_right_type = "FREE"
+    spline.bezier_points[0].handle_left = (first_co.x, first_co.y, first_co.z)
+    spline.bezier_points[0].handle_right = (
+        mid_x + handle_offset_x,
+        mid_y + handle_offset_y,
+        first_co.z
+    )
+
+    spline.bezier_points[1].handle_left_type = "FREE"
+    spline.bezier_points[1].handle_right_type = "FREE"
+    spline.bezier_points[1].handle_left = (
+        mid_x + handle_offset_x,
+        mid_y + handle_offset_y,
+        first_co.z
+    )
+    spline.bezier_points[1].handle_right = (second_co.x, second_co.y, first_co.z)
+
+    curve_obj = bpy.data.objects.new("BezierCurveObject", curve_data)
+    
+    return curve_obj
+
+
 class OBJECT_OT_create_arc(bpy.types.Operator):
     """
     Creates an arc in the XY plane.
@@ -42,49 +101,10 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
         
         first_co = first_obj.location.copy()
 
-        curve_data = bpy.data.curves.new("BezierCurve", type="CURVE")
-        curve_data.dimensions = "3D"
-
-        spline = curve_data.splines.new("BEZIER")
-        spline.bezier_points.add(1)
-
-        spline.bezier_points[0].co = (first_co.x, first_co.y, first_co.z)
-        spline.bezier_points[1].co = (second_co.x, second_co.y, first_co.z)
-
-        # Invert the curve height for correct arc direction
-        y = -self.curve_height
-
-        # Calculate midpoint for handle positioning
-        mid_x = (first_co.x + second_co.x) / 2
-        mid_y = (first_co.y + second_co.y) / 2
+        # Create the bezier curve using the extracted function
+        curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
         
-        # Calculate handle offset based on curve height
-        dx = second_co.x - first_co.x  
-        dy = second_co.y - first_co.y  
-        
-        # Create perpendicular vector for handle offset
-        handle_offset_x = -dy * y
-        handle_offset_y = dx * y
-
-        spline.bezier_points[0].handle_left_type = "FREE"
-        spline.bezier_points[0].handle_right_type = "FREE"
-        spline.bezier_points[0].handle_left = (first_co.x, first_co.y, first_co.z)
-        spline.bezier_points[0].handle_right = (
-            mid_x + handle_offset_x,
-            mid_y + handle_offset_y,
-            first_co.z
-        )
-
-        spline.bezier_points[1].handle_left_type = "FREE"
-        spline.bezier_points[1].handle_right_type = "FREE"
-        spline.bezier_points[1].handle_left = (
-            mid_x + handle_offset_x,
-            mid_y + handle_offset_y,
-            first_co.z
-        )
-        spline.bezier_points[1].handle_right = (second_co.x, second_co.y, first_co.z)
-
-        curve_obj = bpy.data.objects.new("BezierCurveObject", curve_data)
+        # Add the curve to the scene
         context.collection.objects.link(curve_obj)
 
         context.view_layer.objects.active = curve_obj

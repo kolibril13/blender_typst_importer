@@ -24,7 +24,7 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
 
     curve_height: bpy.props.FloatProperty(
         name="Curve Height",
-        description="Adjustable Z parameter that controls the arc's curvature",
+        description="Adjustable Y parameter that controls the arc's curvature",
         default=1.9,
         min=-10.0,
         max=10.0,
@@ -39,19 +39,19 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
         spline.bezier_points.add(1)
 
         spline.bezier_points[0].co = (0, 0, 0)
-        spline.bezier_points[1].co = (0, 2, 0)
+        spline.bezier_points[1].co = (2, 0, 0)
 
-        z = self.curve_height
+        y = self.curve_height
 
         spline.bezier_points[0].handle_left_type = "FREE"
         spline.bezier_points[0].handle_right_type = "FREE"
         spline.bezier_points[0].handle_left = (0, 0, 0)
-        spline.bezier_points[0].handle_right = (0, 1, z)
+        spline.bezier_points[0].handle_right = (1, y, 0)
 
         spline.bezier_points[1].handle_left_type = "FREE"
         spline.bezier_points[1].handle_right_type = "FREE"
-        spline.bezier_points[1].handle_left = (0, 1, z)
-        spline.bezier_points[1].handle_right = (0, 1, 0)
+        spline.bezier_points[1].handle_left = (1, y, 0)
+        spline.bezier_points[1].handle_right = (2, 0, 0)
 
         curve_obj = bpy.data.objects.new("BezierCurveObject", curve_data)
         context.collection.objects.link(curve_obj)

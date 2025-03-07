@@ -8,6 +8,7 @@ import time
 # Global list to store our keymap entries for cleanup.
 addon_keymaps = []
 
+
 class OBJECT_OT_align_to_active(bpy.types.Operator):
     """
     Aligns selected objects' X and Y coordinates to match the active object's location, while preserving Z coordinates.
@@ -17,25 +18,31 @@ class OBJECT_OT_align_to_active(bpy.types.Operator):
     2. Select the target object last (making it active)
     3. Run the operator to align all selected objects to the active object's XY position
     """
+
     bl_idname = "object.align_object_xy"
     bl_label = "Align Object (XY)"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(cls, context):
-        return (context.area is not None and 
-                context.area.type == 'VIEW_3D' and 
-                context.active_object is not None)
+        return (
+            context.area is not None
+            and context.area.type == "VIEW_3D"
+            and context.active_object is not None
+        )
 
     def execute(self, context):
         active_obj = context.active_object
-        target_loc = active_obj.location.copy()  # Copy location to avoid direct reference issues
+        target_loc = (
+            active_obj.location.copy()
+        )  # Copy location to avoid direct reference issues
         for obj in context.selected_objects:
             if obj != active_obj:
                 # Only snap X and Y; leave Z unchanged.
                 obj.location.x = target_loc.x
                 obj.location.y = target_loc.y
-        return {'FINISHED'}
+        return {"FINISHED"}
+
 
 class OBJECT_OT_align_collection(bpy.types.Operator):
     """
@@ -46,50 +53,58 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
     2. Select the target object last (making it active, Object B)
     3. Run the operator to move Object A's collection to align with Object B
     """
+
     bl_idname = "object.align_collection_xy"
     bl_label = "Align Collection (XY)"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(cls, context):
-        return (context.area is not None and 
-                context.area.type == 'VIEW_3D' and 
-                context.active_object is not None)
+        return (
+            context.area is not None
+            and context.area.type == "VIEW_3D"
+            and context.active_object is not None
+        )
 
     def execute(self, context):
         # Ensure exactly 2 objects are selected.
         if len(context.selected_objects) != 2:
-            self.report({'WARNING'}, "Select exactly 2 objects: source (Object A) and destination (Object B)")
-            return {'CANCELLED'}
-        
+            self.report(
+                {"WARNING"},
+                "Select exactly 2 objects: source (Object A) and destination (Object B)",
+            )
+            return {"CANCELLED"}
+
         destination = context.active_object  # Object B
         # Determine the source object (Object A) as the other selected object.
-        source = next((obj for obj in context.selected_objects if obj != destination), None)
+        source = next(
+            (obj for obj in context.selected_objects if obj != destination), None
+        )
         if source is None:
-            self.report({'WARNING'}, "Source object could not be determined.")
-            return {'CANCELLED'}
-        
+            self.report({"WARNING"}, "Source object could not be determined.")
+            return {"CANCELLED"}
+
         # Compute the translation vector from A to B.
         delta = destination.location - source.location
 
         # Gather all objects in every collection that Object A is a member of,
         # including objects in sub-collections.
         objects_to_move = set()
-        
+
         def gather_objects_from_collection(collection):
             # Add objects directly in this collection
             objects_to_move.update(collection.objects)
             # Recursively process sub-collections
             for child_collection in collection.children:
                 gather_objects_from_collection(child_collection)
-        
+
         if source.users_collection:
             for coll in source.users_collection:
                 gather_objects_from_collection(coll)
         else:
             # In case the source isn't in any collection (rare), move just the source.
             objects_to_move.add(source)
-        
+
         # Move each object by delta only in the X and Y axes, except for the destination.
         for obj in objects_to_move:
             if obj == destination:
@@ -97,47 +112,52 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
             obj.location.x += delta.x
             obj.location.y += delta.y
 
-        return {'FINISHED'}
+        return {"FINISHED"}
+
 
 class OBJECT_OT_create_arc(bpy.types.Operator):
     """
     Creates an arc in the XY plane.
-    
+
     Usage:
     1. Run the operator to create an arc
     """
+
     bl_idname = "object.create_arc_xy"
     bl_label = "Create Arc (XY)"
-    bl_options = {'REGISTER', 'UNDO'}
-    
+    bl_options = {"REGISTER", "UNDO"}
+
     @classmethod
     def poll(cls, context):
-        return (context.area is not None and 
-                context.area.type == 'VIEW_3D')
-    
+        return context.area is not None and context.area.type == "VIEW_3D"
+
     def execute(self, context):
         # For now, just print hello world
         print("Hello World")
-        self.report({'INFO'}, "Hello World")
-        return {'FINISHED'}
+        self.report({"INFO"}, "Hello World")
+        return {"FINISHED"}
+
 
 # Add menu entries
 def snap_xy_menu_func(self, context):
-    self.layout.operator(OBJECT_OT_align_to_active.bl_idname, text="Align Object (XY)", icon='SNAP_NORMAL')
+    self.layout.operator(
+        OBJECT_OT_align_to_active.bl_idname,
+        text="Align Object (XY)",
+        icon="SNAP_NORMAL",
+    )
+
 
 def move_group_menu_func(self, context):
     self.layout.operator(
-        OBJECT_OT_align_collection.bl_idname,
-        text="Align Collection (XY)",
-        icon='GROUP'
+        OBJECT_OT_align_collection.bl_idname, text="Align Collection (XY)", icon="GROUP"
     )
+
 
 def create_arc_menu_func(self, context):
     self.layout.operator(
-        OBJECT_OT_create_arc.bl_idname,
-        text="Create Arc (XY)",
-        icon='CURVE_BEZCIRCLE'
+        OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="CURVE_BEZCIRCLE"
     )
+
 
 # Import the helper function from typst_to_svg.py
 from .typst_to_svg import typst_to_blender_curves
@@ -236,15 +256,19 @@ def register():
     bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
     # 4. Add group movement to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
-    
+
     # Set up keyboard shortcuts
     wm = bpy.context.window_manager
-    km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
+    km = wm.keyconfigs.addon.keymaps.new(name="Object Mode", space_type="EMPTY")
     # Bind the 'J' key to trigger the XY snap operator
-    kmi = km.keymap_items.new(OBJECT_OT_align_to_active.bl_idname, type='J', value='PRESS')
+    kmi = km.keymap_items.new(
+        OBJECT_OT_align_to_active.bl_idname, type="J", value="PRESS"
+    )
     addon_keymaps.append((km, kmi))
     # Bind the 'L' key to trigger the group movement operator
-    kmi = km.keymap_items.new(OBJECT_OT_align_collection.bl_idname, type='L', value='PRESS')
+    kmi = km.keymap_items.new(
+        OBJECT_OT_align_collection.bl_idname, type="L", value="PRESS"
+    )
     addon_keymaps.append((km, kmi))
 
 
@@ -254,7 +278,7 @@ def unregister():
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
-    
+
     # Remove menu entries
     # 1. Remove from File > Import menu
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)

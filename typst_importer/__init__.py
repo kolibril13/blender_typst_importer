@@ -68,6 +68,32 @@ def create_bezier_curve(first_co, second_co, curve_height):
     return curve_obj
 
 
+def get_two_selected_objects(context, report_func=None):
+    """
+    Gets two selected objects, ensuring the second one is the active object.
+
+    Args:
+        context: The current Blender context
+        report_func: Optional function to report warnings
+
+    Returns:
+        Tuple of (first_obj, second_obj) or (None, None) if selection is invalid
+    """
+    if len(context.selected_objects) != 2:
+        if report_func:
+            report_func({"WARNING"}, "Select exactly two objects")
+        return None, None
+
+    # Unpack the two objects
+    first_obj, second_obj = context.selected_objects
+
+    # Ensure `second_obj` is the *active* object
+    if second_obj != context.active_object:
+        first_obj, second_obj = second_obj, first_obj
+
+    return first_obj, second_obj
+
+
 class OBJECT_OT_create_arc(bpy.types.Operator):
     """
     Creates an arc in the XY plane.
@@ -90,26 +116,15 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
     )
 
     def execute(self, context):
-
-        if len(context.selected_objects) != 2:
-            self.report({"WARNING"}, "Select exactly two objects")
+        first_obj, second_obj = get_two_selected_objects(context, self.report)
+        if first_obj is None:
             return {"CANCELLED"}
-
-        # Unpack the two objects
-        first_obj, second_obj = context.selected_objects
-
-        # Ensure `second_obj` is the *active* object
-        if second_obj != context.active_object:
-            first_obj, second_obj = second_obj, first_obj
 
         first_co = first_obj.location.copy()
         second_co = second_obj.location.copy()
 
-        # Create the bezier curve using the extracted function
         curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
-
         context.collection.objects.link(curve_obj)
-
         context.view_layer.objects.active = curve_obj
         curve_obj.select_set(True)
 

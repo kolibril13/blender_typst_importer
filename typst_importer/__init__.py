@@ -9,7 +9,6 @@ import time
 addon_keymaps = []
 
 
-
 class OBJECT_OT_create_arc(bpy.types.Operator):
     """
     Creates an arc in the XY plane.
@@ -23,59 +22,43 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
     bl_label = "Create Arc (XY)"
     bl_options = {"REGISTER", "UNDO"}
 
-    @classmethod
-    def poll(cls, context):
-        return (
-            context.area is not None 
-            and context.area.type == "VIEW_3D"
-            and len(context.selected_objects) == 2
-            and context.active_object is not None
-        )
+    z_value: bpy.props.FloatProperty(
+        name="Z Value",
+        description="Adjustable Z parameter for the curve handles",
+        default=1.9,
+        min=-10.0,
+        max=10.0,
+    )
 
+    # Blender will display the operator properties in the "Last Operation" panel.
     def execute(self, context):
-        # Get the active object
-        active_obj = context.active_object
-        active_loc = active_obj.location.copy()
-        
-        # Get the other selected object
-        other_obj = next((obj for obj in context.selected_objects if obj != active_obj), None)
-        if not other_obj:
-            self.report({"WARNING"}, "Select exactly two objects")
-            return {"CANCELLED"}
-        
-        other_loc = other_obj.location.copy()
-        
-        # Create a curve between the two objects with Z=0
-        curve_data = bpy.data.curves.new(name='Arc', type='CURVE')
-        curve_data.dimensions = '3D'
-        
-        # Create a new spline in the curve
-        spline = curve_data.splines.new('BEZIER')
-        spline.bezier_points.add(1)  # Add one point (we already have one by default)
-        
-        # Set the first point to the active object's XY location (Z=0)
-        spline.bezier_points[0].co = (active_loc.x, active_loc.y, 0)
-        spline.bezier_points[0].handle_left_type = 'AUTO'
-        spline.bezier_points[0].handle_right_type = 'AUTO'
-        
-        # Set the second point to the other object's XY location (Z=0)
-        spline.bezier_points[1].co = (other_loc.x, other_loc.y, 0)
-        spline.bezier_points[1].handle_left_type = 'AUTO'
-        spline.bezier_points[1].handle_right_type = 'AUTO'
-        
-        # Create a new curve object
-        curve_obj = bpy.data.objects.new("Arc", curve_data)
-        
-        # Link the curve object to the current collection
-        bpy.context.collection.objects.link(curve_obj)
-        
-        # Select the new curve object and make it active
-        for obj in context.selected_objects:
-            obj.select_set(False)
-        curve_obj.select_set(True)
+        curve_data = bpy.data.curves.new("BezierCurve", type="CURVE")
+        curve_data.dimensions = "3D"
+
+        spline = curve_data.splines.new("BEZIER")
+        spline.bezier_points.add(1)
+
+        spline.bezier_points[0].co = (0, 0, 0)
+        spline.bezier_points[1].co = (0, 2, 0)
+
+        z = self.z_value
+
+        spline.bezier_points[0].handle_left_type = "FREE"
+        spline.bezier_points[0].handle_right_type = "FREE"
+        spline.bezier_points[0].handle_left = (0, 0, 0)
+        spline.bezier_points[0].handle_right = (0, 1, z)
+
+        spline.bezier_points[1].handle_left_type = "FREE"
+        spline.bezier_points[1].handle_right_type = "FREE"
+        spline.bezier_points[1].handle_left = (0, 1, z)
+        spline.bezier_points[1].handle_right = (0, 1, 0)
+
+        curve_obj = bpy.data.objects.new("BezierCurveObject", curve_data)
+        context.collection.objects.link(curve_obj)
+
         context.view_layer.objects.active = curve_obj
-        
-        self.report({"INFO"}, "Arc created in XY plane")
+        curve_obj.select_set(True)
+
         return {"FINISHED"}
 
 
@@ -185,7 +168,6 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
         return {"FINISHED"}
 
 
-
 # Add menu entries
 def snap_xy_menu_func(self, context):
     self.layout.operator(
@@ -203,7 +185,7 @@ def move_group_menu_func(self, context):
 
 def create_arc_menu_func(self, context):
     self.layout.operator(
-        OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="CURVE_BEZCIRCLE"
+        OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="SPHERECURVE"
     )
 
 

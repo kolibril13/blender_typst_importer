@@ -51,7 +51,8 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
         spline.bezier_points[0].co = (first_co.x, first_co.y, first_co.z)
         spline.bezier_points[1].co = (second_co.x, second_co.y, first_co.z)
 
-        y = self.curve_height
+        # Invert the curve height for correct arc direction
+        y = -self.curve_height
 
         # Calculate midpoint for handle positioning
         mid_x = (first_co.x + second_co.x) / 2

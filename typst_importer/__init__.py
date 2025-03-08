@@ -235,6 +235,78 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
             obj.location.y += delta.y
 
         return {"FINISHED"}
+    
+    
+class OBJECT_OT_follow_path(bpy.types.Operator):
+    """
+    Adds a Follow Path constraint to the selected object, making it follow the active curve.
+
+    Usage:
+    1. First select the object you want to follow the path
+    2. Then select the curve (path) object last (making it active)
+    3. Run the operator to make the object follow the selected curve
+    """
+
+    bl_idname = "object.follow_path_constraint"
+    bl_label = "Follow Path"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return (
+            context.area is not None
+            and context.area.type == "VIEW_3D"
+            and context.active_object is not None
+            and len(context.selected_objects) >= 2
+        )
+
+    def execute(self, context):
+        # Get the two selected objects
+        follower_obj, curve_obj = get_two_selected_objects(context, self.report)
+        
+        if follower_obj is None or curve_obj is None:
+            return {"CANCELLED"}
+        
+        if curve_obj.type != 'CURVE':
+            self.report({"WARNING"}, "Active object must be a curve")
+            return {"CANCELLED"}
+        
+        # Reset follower object location to origin
+        follower_obj.location = (0, 0, 0)
+        
+        # Add Follow Path constraint
+        constraint = follower_obj.constraints.new(type='FOLLOW_PATH')
+        constraint.target = curve_obj
+        constraint.forward_axis = 'TRACK_NEGATIVE_X'
+        constraint.up_axis = 'UP_Y'
+        constraint.use_fixed_location = False
+        constraint.use_curve_follow = False 
+        constraint.use_curve_radius = False
+        
+        # Set up the evaluation time for the path
+        curve_obj.data.use_path = True
+        
+        # Set up keyframes for the evaluation time
+        scene = context.scene
+        start_frame = scene.frame_start
+        end_frame = scene.frame_end
+        
+        # Create keyframes for the evaluation time
+        curve_obj.data.eval_time = 0
+        curve_obj.data.keyframe_insert(data_path="eval_time", frame=start_frame)
+        
+        # Set the end keyframe (100 is the default max evaluation time)
+        curve_obj.data.eval_time = 100
+        curve_obj.data.keyframe_insert(data_path="eval_time", frame=end_frame)
+        
+        # Set the constraint to use the evaluation time
+        constraint.use_fixed_location = True
+        constraint.offset_factor = 0
+        
+        self.report({"INFO"}, f"Added Follow Path constraint to {follower_obj.name} following {curve_obj.name}")
+        return {"FINISHED"}
+
+
 
 
 # Add menu entries
@@ -256,6 +328,13 @@ def create_arc_menu_func(self, context):
     self.layout.operator(
         OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="SPHERECURVE"
     )
+
+
+def follow_path_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH"
+    )
+
 
 
 # Import the helper function from typst_to_svg.py
@@ -341,9 +420,11 @@ def register():
     bpy.utils.register_class(OBJECT_OT_align_collection)
     # 3. Arc creation operator
     bpy.utils.register_class(OBJECT_OT_create_arc)
-    # 4. Main Typst import operator that handles file selection and import
+    # 4. Follow path operator
+    bpy.utils.register_class(OBJECT_OT_follow_path)
+    # 5. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 5. File handler for drag-and-drop support of .txt/.typ files
+    # 6. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
 
     # Add menu entries
@@ -355,6 +436,8 @@ def register():
     bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
     # 4. Add group movement to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
+    # 5. Add follow path to the Object menu
+    bpy.types.VIEW3D_MT_object.prepend(follow_path_menu_func)
 
     # Set up keyboard shortcuts
     wm = bpy.context.window_manager
@@ -387,10 +470,13 @@ def unregister():
     bpy.types.VIEW3D_MT_object.remove(move_group_menu_func)
     # 4. Remove arc creation from Object menu
     bpy.types.VIEW3D_MT_object.remove(create_arc_menu_func)
+    # 5. Remove follow path from Object menu
+    bpy.types.VIEW3D_MT_object.remove(follow_path_menu_func)
 
     # Unregister Blender classes in reverse order
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
+    bpy.utils.unregister_class(OBJECT_OT_follow_path)
     bpy.utils.unregister_class(OBJECT_OT_create_arc)
     bpy.utils.unregister_class(OBJECT_OT_align_collection)
     bpy.utils.unregister_class(OBJECT_OT_align_to_active)

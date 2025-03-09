@@ -239,7 +239,7 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
     
 class OBJECT_OT_follow_path(bpy.types.Operator):
     """
-    Adds a Follow Path constraint to the selected object, making it follow the active curve.
+    Adds a Geometry Nodes modifier to the selected object, making it follow the active curve.
 
     Usage:
     1. First select the object you want to follow the path
@@ -271,41 +271,118 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
             self.report({"WARNING"}, "Active object must be a curve")
             return {"CANCELLED"}
         
-        # Reset follower object location to origin
-        follower_obj.location = (0, 0, 0)
+        # Create a geometry nodes modifier
+        modifier = follower_obj.modifiers.new(name="FollowPath", type='NODES')
         
-        # Add Follow Path constraint
-        constraint = follower_obj.constraints.new(type='FOLLOW_PATH')
-        constraint.target = curve_obj
-        constraint.forward_axis = 'TRACK_NEGATIVE_X'
-        constraint.up_axis = 'UP_Y'
-        constraint.use_fixed_location = False
-        constraint.use_curve_follow = False 
-        constraint.use_curve_radius = False
+        # Always create a new geometry nodes group to avoid conflicts
+        geometry_nodes = self.create_follow_curve_node_group()
+            
+        # Assign the node group to the modifier
+        modifier.node_group = geometry_nodes
         
-        # Set up the evaluation time for the path
-        curve_obj.data.use_path = True
-        
-        # Set up keyframes for the evaluation time
-        scene = context.scene
-        start_frame = scene.frame_start
-        end_frame = scene.frame_end
-        
-        # Create keyframes for the evaluation time
-        curve_obj.data.eval_time = 0
-        curve_obj.data.keyframe_insert(data_path="eval_time", frame=start_frame)
-        
-        # Set the end keyframe (100 is the default max evaluation time)
-        curve_obj.data.eval_time = 100
-        curve_obj.data.keyframe_insert(data_path="eval_time", frame=end_frame)
-        
-        # Set the constraint to use the evaluation time
-        constraint.use_fixed_location = True
-        constraint.offset_factor = 0
-        
-        self.report({"INFO"}, f"Added Follow Path constraint to {follower_obj.name} following {curve_obj.name}")
-        return {"FINISHED"}
+        # Set the curve object as the target
+        modifier["Input_2"] = curve_obj
 
+        
+        self.report({"INFO"}, f"Added Follow Path modifier to {follower_obj.name} following {curve_obj.name}")
+        return {"FINISHED"}
+    
+    def create_follow_curve_node_group(self):
+        geometry_nodes = bpy.data.node_groups.new(type='GeometryNodeTree', name="Follow Path")
+
+        geometry_nodes.color_tag = 'NONE'
+        geometry_nodes.description = ""
+        geometry_nodes.default_group_node_width = 140
+        
+        geometry_nodes.is_modifier = True
+
+        # Geometry nodes interface
+        # Socket Geometry
+        geometry_socket = geometry_nodes.interface.new_socket(name="Geometry", in_out='OUTPUT', socket_type='NodeSocketGeometry')
+        geometry_socket.attribute_domain = 'POINT'
+
+        # Socket Geometry
+        geometry_socket_1 = geometry_nodes.interface.new_socket(name="Geometry", in_out='INPUT', socket_type='NodeSocketGeometry')
+        geometry_socket_1.attribute_domain = 'POINT'
+
+        # Socket Object
+        object_socket = geometry_nodes.interface.new_socket(name="Object", in_out='INPUT', socket_type='NodeSocketObject')
+        object_socket.attribute_domain = 'POINT'
+
+        # Socket Factor
+        factor_socket = geometry_nodes.interface.new_socket(name="Factor", in_out='INPUT', socket_type='NodeSocketFloat')
+        factor_socket.default_value = 0.0
+        factor_socket.min_value = 0.0
+        factor_socket.max_value = 1.0
+        factor_socket.subtype = 'FACTOR'
+        factor_socket.attribute_domain = 'POINT'
+
+        # Initialize geometry_nodes nodes
+        # Node Group Input
+        group_input = geometry_nodes.nodes.new("NodeGroupInput")
+        group_input.name = "Group Input"
+
+        # Node Group Output
+        group_output = geometry_nodes.nodes.new("NodeGroupOutput")
+        group_output.name = "Group Output"
+        group_output.is_active_output = True
+
+        # Node Object Info
+        object_info = geometry_nodes.nodes.new("GeometryNodeObjectInfo")
+        object_info.name = "Object Info"
+        object_info.transform_space = 'RELATIVE'
+        # As Instance
+        object_info.inputs[1].default_value = False
+
+        # Node Sample Curve
+        sample_curve = geometry_nodes.nodes.new("GeometryNodeSampleCurve")
+        sample_curve.name = "Sample Curve"
+        sample_curve.data_type = 'FLOAT'
+        sample_curve.mode = 'FACTOR'
+        sample_curve.use_all_curves = False
+        # Value
+        sample_curve.inputs[1].default_value = 0.0
+        # Curve Index
+        sample_curve.inputs[4].default_value = 0
+
+        # Node Transform Geometry
+        transform_geometry = geometry_nodes.nodes.new("GeometryNodeTransform")
+        transform_geometry.name = "Transform Geometry"
+        transform_geometry.mode = 'COMPONENTS'
+        # Rotation
+        transform_geometry.inputs[2].default_value = (0.0, 0.0, 0.0)
+        # Scale
+        transform_geometry.inputs[3].default_value = (1.0, 1.0, 1.0)
+
+        # Set locations
+        group_input.location = (-823.9720458984375, -15.397307395935059)
+        group_output.location = (453.2863464355469, 0.0)
+        object_info.location = (-150.86984252929688, -76.18202209472656)
+        sample_curve.location = (63.41365432739258, -107.25779724121094)
+        transform_geometry.location = (251.88833618164062, 36.368404388427734)
+
+        # Set dimensions
+        group_input.width, group_input.height = 140.0, 100.0
+        group_output.width, group_output.height = 140.0, 100.0
+        object_info.width, object_info.height = 140.0, 100.0
+        sample_curve.width, sample_curve.height = 140.0, 100.0
+        transform_geometry.width, transform_geometry.height = 140.0, 100.0
+
+        # Initialize geometry_nodes links
+        # group_input.Object -> object_info.Object
+        geometry_nodes.links.new(group_input.outputs[1], object_info.inputs[0])
+        # object_info.Geometry -> sample_curve.Curves
+        geometry_nodes.links.new(object_info.outputs[4], sample_curve.inputs[0])
+        # sample_curve.Position -> transform_geometry.Translation
+        geometry_nodes.links.new(sample_curve.outputs[1], transform_geometry.inputs[1])
+        # group_input.Geometry -> transform_geometry.Geometry
+        geometry_nodes.links.new(group_input.outputs[0], transform_geometry.inputs[0])
+        # transform_geometry.Geometry -> group_output.Geometry
+        geometry_nodes.links.new(transform_geometry.outputs[0], group_output.inputs[0])
+        # group_input.Factor -> sample_curve.Factor
+        geometry_nodes.links.new(group_input.outputs[2], sample_curve.inputs[2])
+        
+        return geometry_nodes
 
 
 

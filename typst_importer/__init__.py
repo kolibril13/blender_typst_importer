@@ -235,8 +235,8 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
             obj.location.y += delta.y
 
         return {"FINISHED"}
-    
-    
+
+
 class OBJECT_OT_follow_path(bpy.types.Operator):
     """
     Adds a Geometry Nodes modifier to the selected object, making it follow the active curve.
@@ -263,59 +263,71 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
     def execute(self, context):
         # Get the two selected objects
         follower_obj, curve_obj = get_two_selected_objects(context, self.report)
-        
+
         if follower_obj is None or curve_obj is None:
             return {"CANCELLED"}
-        
-        if curve_obj.type != 'CURVE':
+
+        if curve_obj.type != "CURVE":
             self.report({"WARNING"}, "Active object must be a curve")
             return {"CANCELLED"}
-        
+
         # Create a geometry nodes modifier
-        modifier = follower_obj.modifiers.new(name="FollowPath", type='NODES')
-        
+        modifier = follower_obj.modifiers.new(name="FollowPath", type="NODES")
+
         # Always create a new geometry nodes group to avoid conflicts
         geometry_nodes = self.create_follow_curve_node_group()
-            
+
         # Assign the node group to the modifier
         modifier.node_group = geometry_nodes
-        
-        # Set the curve object as the target
-        modifier["Input_2"] = curve_obj
 
-        
-        self.report({"INFO"}, f"Added Follow Path modifier to {follower_obj.name} following {curve_obj.name}")
+        # Set the curve object as the target - simpler approach
+        modifier["Socket_2"] = curve_obj
+
+        self.report(
+            {"INFO"},
+            f"Added Follow Path modifier to {follower_obj.name} following {curve_obj.name}",
+        )
         return {"FINISHED"}
-    
-    def create_follow_curve_node_group(self):
-        geometry_nodes = bpy.data.node_groups.new(type='GeometryNodeTree', name="Follow Path")
 
-        geometry_nodes.color_tag = 'NONE'
+    def create_follow_curve_node_group(self):
+        geometry_nodes = bpy.data.node_groups.new(
+            type="GeometryNodeTree", name="Follow Path"
+        )
+
+        geometry_nodes.color_tag = "NONE"
         geometry_nodes.description = ""
         geometry_nodes.default_group_node_width = 140
-        
+
         geometry_nodes.is_modifier = True
 
         # Geometry nodes interface
         # Socket Geometry
-        geometry_socket = geometry_nodes.interface.new_socket(name="Geometry", in_out='OUTPUT', socket_type='NodeSocketGeometry')
-        geometry_socket.attribute_domain = 'POINT'
+        geometry_socket = geometry_nodes.interface.new_socket(
+            name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
+        )
+        geometry_socket.attribute_domain = "POINT"
 
         # Socket Geometry
-        geometry_socket_1 = geometry_nodes.interface.new_socket(name="Geometry", in_out='INPUT', socket_type='NodeSocketGeometry')
-        geometry_socket_1.attribute_domain = 'POINT'
+        geometry_socket_1 = geometry_nodes.interface.new_socket(
+            name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
+        )
+        geometry_socket_1.attribute_domain = "POINT"
 
         # Socket Object
-        object_socket = geometry_nodes.interface.new_socket(name="Object", in_out='INPUT', socket_type='NodeSocketObject')
-        object_socket.attribute_domain = 'POINT'
+        object_socket = geometry_nodes.interface.new_socket(
+            name="Object", in_out="INPUT", socket_type="NodeSocketObject"
+        )
+        object_socket.attribute_domain = "POINT"
 
         # Socket Factor
-        factor_socket = geometry_nodes.interface.new_socket(name="Factor", in_out='INPUT', socket_type='NodeSocketFloat')
+        factor_socket = geometry_nodes.interface.new_socket(
+            name="Factor", in_out="INPUT", socket_type="NodeSocketFloat"
+        )
         factor_socket.default_value = 0.0
         factor_socket.min_value = 0.0
         factor_socket.max_value = 1.0
-        factor_socket.subtype = 'FACTOR'
-        factor_socket.attribute_domain = 'POINT'
+        factor_socket.subtype = "FACTOR"
+        factor_socket.attribute_domain = "POINT"
 
         # Initialize geometry_nodes nodes
         # Node Group Input
@@ -330,15 +342,15 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         # Node Object Info
         object_info = geometry_nodes.nodes.new("GeometryNodeObjectInfo")
         object_info.name = "Object Info"
-        object_info.transform_space = 'RELATIVE'
+        object_info.transform_space = "RELATIVE"
         # As Instance
         object_info.inputs[1].default_value = False
 
         # Node Sample Curve
         sample_curve = geometry_nodes.nodes.new("GeometryNodeSampleCurve")
         sample_curve.name = "Sample Curve"
-        sample_curve.data_type = 'FLOAT'
-        sample_curve.mode = 'FACTOR'
+        sample_curve.data_type = "FLOAT"
+        sample_curve.mode = "FACTOR"
         sample_curve.use_all_curves = False
         # Value
         sample_curve.inputs[1].default_value = 0.0
@@ -348,7 +360,7 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         # Node Transform Geometry
         transform_geometry = geometry_nodes.nodes.new("GeometryNodeTransform")
         transform_geometry.name = "Transform Geometry"
-        transform_geometry.mode = 'COMPONENTS'
+        transform_geometry.mode = "COMPONENTS"
         # Rotation
         transform_geometry.inputs[2].default_value = (0.0, 0.0, 0.0)
         # Scale
@@ -381,9 +393,8 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         geometry_nodes.links.new(transform_geometry.outputs[0], group_output.inputs[0])
         # group_input.Factor -> sample_curve.Factor
         geometry_nodes.links.new(group_input.outputs[2], sample_curve.inputs[2])
-        
-        return geometry_nodes
 
+        return geometry_nodes
 
 
 # Add menu entries
@@ -411,7 +422,6 @@ def follow_path_menu_func(self, context):
     self.layout.operator(
         OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH"
     )
-
 
 
 # Import the helper function from typst_to_svg.py

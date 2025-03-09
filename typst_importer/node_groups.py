@@ -1,39 +1,40 @@
-import bpy
+import bpy, mathutils
+
+
+# auto generated node group with https://extensions.blender.org/add-ons/node-to-python/
 
 def create_follow_curve_node_group():
     """
     Creates a Geometry Nodes group that makes an object follow a curve.
-    
+
     Returns:
         The created node group
     """
     # Create a new node group or use existing one
-    geometry_nodes = bpy.data.node_groups.new(
-        type="GeometryNodeTree", name="Follow Path"
-    )
+    follow_path = bpy.data.node_groups.new(type="GeometryNodeTree", name="Follow Path")
 
-    geometry_nodes.color_tag = "NONE"
-    geometry_nodes.description = ""
-    geometry_nodes.default_group_node_width = 140
-    geometry_nodes.is_modifier = True
+    follow_path.color_tag = "NONE"
+    follow_path.description = ""
+    follow_path.default_group_node_width = 140
+    follow_path.is_modifier = True
 
     # Create interface sockets
-    geometry_socket = geometry_nodes.interface.new_socket(
+    geometry_socket = follow_path.interface.new_socket(
         name="Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry"
     )
     geometry_socket.attribute_domain = "POINT"
 
-    geometry_socket_1 = geometry_nodes.interface.new_socket(
+    geometry_socket_1 = follow_path.interface.new_socket(
         name="Geometry", in_out="INPUT", socket_type="NodeSocketGeometry"
     )
     geometry_socket_1.attribute_domain = "POINT"
 
-    object_socket = geometry_nodes.interface.new_socket(
+    object_socket = follow_path.interface.new_socket(
         name="Object", in_out="INPUT", socket_type="NodeSocketObject"
     )
     object_socket.attribute_domain = "POINT"
 
-    factor_socket = geometry_nodes.interface.new_socket(
+    factor_socket = follow_path.interface.new_socket(
         name="Factor", in_out="INPUT", socket_type="NodeSocketFloat"
     )
     factor_socket.default_value = 0.0
@@ -43,19 +44,19 @@ def create_follow_curve_node_group():
     factor_socket.attribute_domain = "POINT"
 
     # Create nodes
-    group_input = geometry_nodes.nodes.new("NodeGroupInput")
+    group_input = follow_path.nodes.new("NodeGroupInput")
     group_input.name = "Group Input"
 
-    group_output = geometry_nodes.nodes.new("NodeGroupOutput")
+    group_output = follow_path.nodes.new("NodeGroupOutput")
     group_output.name = "Group Output"
     group_output.is_active_output = True
 
-    object_info = geometry_nodes.nodes.new("GeometryNodeObjectInfo")
+    object_info = follow_path.nodes.new("GeometryNodeObjectInfo")
     object_info.name = "Object Info"
     object_info.transform_space = "RELATIVE"
     object_info.inputs[1].default_value = False  # As Instance
 
-    sample_curve = geometry_nodes.nodes.new("GeometryNodeSampleCurve")
+    sample_curve = follow_path.nodes.new("GeometryNodeSampleCurve")
     sample_curve.name = "Sample Curve"
     sample_curve.data_type = "FLOAT"
     sample_curve.mode = "FACTOR"
@@ -63,31 +64,54 @@ def create_follow_curve_node_group():
     sample_curve.inputs[1].default_value = 0.0  # Value
     sample_curve.inputs[4].default_value = 0  # Curve Index
 
-    transform_geometry = geometry_nodes.nodes.new("GeometryNodeTransform")
+    transform_geometry = follow_path.nodes.new("GeometryNodeTransform")
     transform_geometry.name = "Transform Geometry"
     transform_geometry.mode = "COMPONENTS"
     transform_geometry.inputs[2].default_value = (0.0, 0.0, 0.0)  # Rotation
     transform_geometry.inputs[3].default_value = (1.0, 1.0, 1.0)  # Scale
 
+    reroute_001 = follow_path.nodes.new("NodeReroute")
+    reroute_001.name = "Reroute.001"
+    reroute_001.socket_idname = "NodeSocketFloatFactor"
+
     # Set node locations
-    group_input.location = (-823.972, -15.397)
-    group_output.location = (453.286, 0.0)
-    object_info.location = (-150.870, -76.182)
-    sample_curve.location = (63.414, -107.258)
-    transform_geometry.location = (251.888, 36.368)
+    group_input.location = (-380.0, 60.0)
+    group_output.location = (300.0, 60.0)
+    object_info.location = (-180.0, 0.0)
+    sample_curve.location = (-20.0, 0.0)
+    transform_geometry.location = (140.0, 100.0)
+    reroute_001.location = (-180.0, -240.0)
 
     # Set node dimensions
-    for node in [group_input, group_output, object_info, sample_curve, transform_geometry]:
-        node.width = 140.0
-        node.height = 100.0
+    group_input.width, group_input.height = 140.0, 100.0
+    group_output.width, group_output.height = 140.0, 100.0
+    object_info.width, object_info.height = 140.0, 100.0
+    sample_curve.width, sample_curve.height = 140.0, 100.0
+    transform_geometry.width, transform_geometry.height = 140.0, 100.0
+    reroute_001.width, reroute_001.height = 16.0, 100.0
 
     # Create links
-    links = geometry_nodes.links
-    links.new(group_input.outputs[1], object_info.inputs[0])  # Object
-    links.new(object_info.outputs[4], sample_curve.inputs[0])  # Geometry -> Curves
-    links.new(sample_curve.outputs[1], transform_geometry.inputs[1])  # Position -> Translation
-    links.new(group_input.outputs[0], transform_geometry.inputs[0])  # Geometry
-    links.new(transform_geometry.outputs[0], group_output.inputs[0])  # Final Geometry
-    links.new(group_input.outputs[2], sample_curve.inputs[2])  # Factor
+    links = follow_path.links
+    links.new(
+        object_info.outputs[4], sample_curve.inputs[0]
+    )  # Object Info.Geometry -> Sample Curve.Curves
+    links.new(
+        sample_curve.outputs[1], transform_geometry.inputs[1]
+    )  # Sample Curve.Position -> Transform Geometry.Translation
+    links.new(
+        group_input.outputs[0], transform_geometry.inputs[0]
+    )  # Group Input.Geometry -> Transform Geometry.Geometry
+    links.new(
+        transform_geometry.outputs[0], group_output.inputs[0]
+    )  # Transform Geometry.Geometry -> Group Output.Geometry
+    links.new(
+        reroute_001.outputs[0], sample_curve.inputs[2]
+    )  # Reroute.001.Output -> Sample Curve.Factor
+    links.new(
+        group_input.outputs[1], object_info.inputs[0]
+    )  # Group Input.Object -> Object Info.Object
+    links.new(
+        group_input.outputs[2], reroute_001.inputs[0]
+    )  # Group Input.Factor -> Reroute.001.Input
 
-    return geometry_nodes 
+    return follow_path

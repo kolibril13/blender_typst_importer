@@ -411,14 +411,14 @@ def register():
     # Add menu entries
     # 1. Add Typst importer to the File > Import menu
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
-    # 2. Add arc creation to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(create_arc_menu_func)
-    # 3. Add XY snapping to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
-    # 4. Add group movement to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
-    # 5. Add follow path to the Object menu
+    # 2. Add follow path to the Object menu (first)
     bpy.types.VIEW3D_MT_object.prepend(follow_path_menu_func)
+    # 3. Add arc creation to the Object menu
+    bpy.types.VIEW3D_MT_object.prepend(create_arc_menu_func)
+    # 4. Add XY snapping to the Object menu
+    bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
+    # 5. Add group movement to the Object menu
+    bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
 
     # Set up keyboard shortcuts
     wm = bpy.context.window_manager

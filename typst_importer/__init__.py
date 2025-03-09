@@ -237,7 +237,6 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
 
         return {"FINISHED"}
 
-
 class OBJECT_OT_follow_path(bpy.types.Operator):
     """
     Adds a Geometry Nodes modifier to the selected object, making it follow the active curve.
@@ -286,6 +285,14 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         
         # Get the current frame
         current_frame = context.scene.frame_current
+        
+        # Clear any existing keyframes for this property
+        if follower_obj.animation_data and follower_obj.animation_data.action:
+            fcurves = follower_obj.animation_data.action.fcurves
+            for fc in fcurves:
+                if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
+                    follower_obj.animation_data.action.fcurves.remove(fc)
+                    break
         
         # Add keyframe at current frame with factor 0.0
         modifier["Socket_3"] = 0.0

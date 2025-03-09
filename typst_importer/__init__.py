@@ -283,10 +283,25 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
 
         # Set the curve object as the target - simpler approach
         modifier["Socket_2"] = curve_obj
+        
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        
+        # Add keyframe at current frame with factor 0.0
+        modifier["Socket_3"] = 0.0
+        follower_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
+        
+        # Add keyframe 24 frames later with factor 1.0
+        next_frame = current_frame + 24
+        modifier["Socket_3"] = 1.0
+        follower_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
+        
+        # Reset to initial value for display
+        modifier["Socket_3"] = 0.0
 
         self.report(
             {"INFO"},
-            f"Added Follow Path modifier to {follower_obj.name} following {curve_obj.name}",
+            f"Added Follow Path modifier to {follower_obj.name} following {curve_obj.name} with animation keyframes",
         )
         return {"FINISHED"}
 

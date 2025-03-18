@@ -91,6 +91,7 @@ for i in range(0,10):
 
 
 ## v0.1.8
+- rename "my_opacity" to "opacity"
 - Use an emission shader instead of principled bsdf, so that the text is not effected by scene light:
 ![image](https://github.com/user-attachments/assets/02049d1a-d659-4b66-8215-4415f433b2d7)
 

@@ -44,23 +44,31 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     emission = nodes.new(type='ShaderNodeEmission')
     mix_shader = nodes.new(type='ShaderNodeMixShader')
     output = nodes.new(type='ShaderNodeOutputMaterial')
-    
+
     attr_node = nodes.new("ShaderNodeAttribute")
     attr_node.attribute_name = "my_opacity"
     attr_node.attribute_type = "OBJECT"
-    
+
+    rgb_node = nodes.new(type='ShaderNodeRGB')
+    rgb_node.outputs[0].default_value = color  # Set RGB node color
+
     # Set node positions
-    transparent.location = (-300, 200)
+    attr_node.location = (-300, 300)
+    transparent.location = (-300, 100)
+    rgb_node.location = (-500, 0)
     emission.location = (-300, 0)
     mix_shader.location = (0, 100)
     output.location = (300, 100)
-    attr_node.location = (-600, 100)
-    
-    # Set Emission color
-    emission.inputs[0].default_value = color  # Use the provided color
-    emission.inputs[1].default_value = 1.0  # Emission strength
-    
+
+    # Create a note using a reroute node
+    note = nodes.new(type='NodeFrame')
+    note.label = "Info: Change opacity at 'Object Properties → Opacity'"
+    note.location = (-800, 100)
+    note.width = 480
+    note.height = 50
+
     # Link nodes
+    links.new(rgb_node.outputs[0], emission.inputs[0])  # RGB node to emission color
     links.new(transparent.outputs[0], mix_shader.inputs[1])
     links.new(emission.outputs[0], mix_shader.inputs[2])
     links.new(mix_shader.outputs[0], output.inputs[0])

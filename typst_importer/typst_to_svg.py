@@ -32,7 +32,7 @@ def create_material(color, name: str = "") -> bpy.types.Material:
 
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
-    mat.blend_method = 'BLEND'
+    mat.blend_method = "BLEND"
 
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
@@ -40,39 +40,34 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     nodes.clear()
 
     # Create necessary nodes
-    transparent = nodes.new(type='ShaderNodeBsdfTransparent')
-    emission = nodes.new(type='ShaderNodeEmission')
-    mix_shader = nodes.new(type='ShaderNodeMixShader')
-    output = nodes.new(type='ShaderNodeOutputMaterial')
+    transparent = nodes.new(type="ShaderNodeBsdfTransparent")
+    emission = nodes.new(type="ShaderNodeEmission")
+    mix_shader = nodes.new(type="ShaderNodeMixShader")
+    output = nodes.new(type="ShaderNodeOutputMaterial")
 
     attr_node = nodes.new("ShaderNodeAttribute")
     attr_node.attribute_name = "my_opacity"
     attr_node.attribute_type = "OBJECT"
 
-    rgb_node = nodes.new(type='ShaderNodeRGB')
-    rgb_node.outputs[0].default_value = color  # Set RGB node color
-
     # Set node positions
     attr_node.location = (-300, 300)
     transparent.location = (-300, 100)
-    rgb_node.location = (-500, 0)
+
     emission.location = (-300, 0)
     mix_shader.location = (0, 100)
     output.location = (300, 100)
 
-    # Create a note using a reroute node
-    note = nodes.new(type='NodeFrame')
-    note.label = "Info: Change opacity at 'Object Properties → Opacity'"
-    note.location = (-800, 100)
-    note.width = 480
-    note.height = 50
+    # Set Emission color
+    emission.inputs[0].default_value = color  # Use the provided color
+    emission.inputs[1].default_value = 1.0  # Emission strength
 
     # Link nodes
-    links.new(rgb_node.outputs[0], emission.inputs[0])  # RGB node to emission color
     links.new(transparent.outputs[0], mix_shader.inputs[1])
     links.new(emission.outputs[0], mix_shader.inputs[2])
     links.new(mix_shader.outputs[0], output.inputs[0])
-    links.new(attr_node.outputs["Fac"], mix_shader.inputs[0])  # Use object opacity attribute
+    links.new(
+        attr_node.outputs["Fac"], mix_shader.inputs[0]
+    )  # Use object opacity attribute
 
     return mat
 
@@ -181,31 +176,34 @@ def _convert_to_meshes(collection: bpy.types.Collection) -> None:
     # Clean up any orphaned data after conversion
     # bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
 
+
 def add_indices_to_collection(imported_collection):
     """
     Add index labels to objects in a collection.
     Example:
     ```python
-    content = "$ limits(integral)_a^b f(x) dif x $" 
+    content = "$ limits(integral)_a^b f(x) dif x $"
     c = typst_express(content, origin_to_char=True, name="Integral")
     indices_collection = add_indices_to_collection(c)
     ```
-    
+
     Args:
         imported_collection: The collection containing objects to be indexed.
-    
+
     Returns:
         The indices collection if created, otherwise None.
     """
     # Create a new collection for indices if there are multiple objects
     if len(imported_collection.objects) > 1:
-        indices_collection = bpy.data.collections.new(f"{imported_collection.name}_Indices")
+        indices_collection = bpy.data.collections.new(
+            f"{imported_collection.name}_Indices"
+        )
         # Link the indices collection as a child of the imported_collection instead of scene collection
         imported_collection.children.link(indices_collection)
-        
+
         for i, obj in enumerate(imported_collection.objects):
             # Create text object at the same location as the curve/mesh
-            bpy.ops.object.text_add(location=(0,0,0))
+            bpy.ops.object.text_add(location=(0, 0, 0))
             text_obj = bpy.context.active_object
             text_obj.data.body = str(i)
             text_obj.name = f"Index_{i}"
@@ -213,75 +211,94 @@ def add_indices_to_collection(imported_collection):
             text_obj.scale = (0.15, 0.15, 0.15)
 
             # Make the text smaller
-            
+
             # Set text color to blue
             if "Index_Material" not in bpy.data.materials:
                 mat = bpy.data.materials.new("Index_Material")
                 mat.diffuse_color = (0.0, 0.0, 1.0, 1.0)  # Blue color
             else:
                 mat = bpy.data.materials["Index_Material"]
-            
+
             if text_obj.data.materials:
                 text_obj.data.materials[0] = mat
             else:
                 text_obj.data.materials.append(mat)
-                            
+
             # Set text position to obj.location with slight z offset
-            text_obj.location = (obj.location[0], obj.location[1], obj.location[2] + 0.009)
-            
+            text_obj.location = (
+                obj.location[0],
+                obj.location[1],
+                obj.location[2] + 0.009,
+            )
+
             # Create background circle for the text
-            bpy.ops.mesh.primitive_circle_add(vertices=32, radius=0.07, fill_type='NGON', 
-                                             location=(obj.location[0], obj.location[1], obj.location[2] + 0.005))
+            bpy.ops.mesh.primitive_circle_add(
+                vertices=32,
+                radius=0.07,
+                fill_type="NGON",
+                location=(obj.location[0], obj.location[1], obj.location[2] + 0.005),
+            )
             circle_obj = bpy.context.active_object
             circle_obj.name = f"Index_Bg_{i}"
-            
+
             # Create white material for background with transparency
             if "Index_Bg_Material" not in bpy.data.materials:
                 bg_mat = bpy.data.materials.new("Index_Bg_Material")
-                bg_mat.diffuse_color = (1.0, 1.0, 1.0, 0.2)  # White with some transparency
-                
+                bg_mat.diffuse_color = (
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.2,
+                )  # White with some transparency
+
                 # Set up material for transparency
                 bg_mat.use_nodes = True
                 nodes = bg_mat.node_tree.nodes
                 links = bg_mat.node_tree.links
-                
+
                 # Clear existing nodes
                 for node in nodes:
                     nodes.remove(node)
-                
+
                 # Create necessary nodes
                 output_node = nodes.new(type="ShaderNodeOutputMaterial")
                 output_node.location = (400, 0)
-                
+
                 principled_node = nodes.new(type="ShaderNodeBsdfPrincipled")
                 principled_node.location = (0, 0)
-                principled_node.inputs["Base Color"].default_value = (1.0, 1.0, 1.0, 1.0)
+                principled_node.inputs["Base Color"].default_value = (
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                )
                 principled_node.inputs["Alpha"].default_value = 0.2
-                
-                links.new(principled_node.outputs["BSDF"], output_node.inputs["Surface"])
-                
+
+                links.new(
+                    principled_node.outputs["BSDF"], output_node.inputs["Surface"]
+                )
+
                 # Enable transparency settings for Eevee
-                bg_mat.blend_method = 'BLEND'
+                bg_mat.blend_method = "BLEND"
                 bg_mat.use_backface_culling = False
             else:
                 bg_mat = bpy.data.materials["Index_Bg_Material"]
-            
+
             if circle_obj.data.materials:
                 circle_obj.data.materials[0] = bg_mat
             else:
                 circle_obj.data.materials.append(bg_mat)
-            
+
             # Move from scene collection to indices collection
             bpy.context.scene.collection.objects.unlink(text_obj)
             indices_collection.objects.link(text_obj)
-            
+
             bpy.context.scene.collection.objects.unlink(circle_obj)
             indices_collection.objects.link(circle_obj)
-        
-        return indices_collection
-    
-    return None
 
+        return indices_collection
+
+    return None
 
 
 # Main conversion functions
@@ -353,7 +370,7 @@ def typst_to_blender_curves(
 
     if convert_to_mesh:
         _convert_to_meshes(imported_collection)
-        
+
     # Position the collection if coordinates are provided
     if position is not None:
         for obj in imported_collection.objects:
@@ -363,7 +380,7 @@ def typst_to_blender_curves(
                 obj.location[1] + position[1],
                 obj.location[2] + position[2],
             )
-            
+
     # Add index labels if requested
     if show_indices:
         add_indices_to_collection(imported_collection)
@@ -415,7 +432,13 @@ def typst_express(
 
     # Convert to Blender curves
     collection = typst_to_blender_curves(
-        temp_file, scale_factor, origin_to_char, join_curves, convert_to_mesh, position, show_indices
+        temp_file,
+        scale_factor,
+        origin_to_char,
+        join_curves,
+        convert_to_mesh,
+        position,
+        show_indices,
     )
     collection.name = name
 

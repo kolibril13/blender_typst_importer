@@ -19,8 +19,8 @@ bpy.types.Collection.processed_svg = bpy.props.StringProperty(
 def setup_object(obj: bpy.types.Object, scale_factor: float = 200) -> None:
     """Setup individual object properties."""
     obj.data.transform(Matrix.Scale(scale_factor, 4))
-    obj["my_opacity"] = 1.0
-    obj.id_properties_ui("my_opacity").update(min=0.0, max=1.0, step=0.1)
+    obj["opacity"] = 1.0
+    obj.id_properties_ui("opacity").update(min=0.0, max=1.0, step=0.1)
 
 
 def create_material(color, name: str = "") -> bpy.types.Material:
@@ -46,7 +46,7 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     output = nodes.new(type="ShaderNodeOutputMaterial")
 
     attr_node = nodes.new("ShaderNodeAttribute")
-    attr_node.attribute_name = "my_opacity"
+    attr_node.attribute_name = "opacity"
     attr_node.attribute_type = "OBJECT"
 
     # Set node positions

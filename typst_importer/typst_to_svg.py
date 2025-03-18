@@ -34,26 +34,37 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     mat.use_nodes = True
     mat.blend_method = 'BLEND'
 
-
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
 
     nodes.clear()
 
-    output = nodes.new("ShaderNodeOutputMaterial")
-    output.location = (300, 0)
-    principled = nodes.new("ShaderNodeBsdfPrincipled")
-    principled.location = (0, 0)
-
+    # Create necessary nodes
+    transparent = nodes.new(type='ShaderNodeBsdfTransparent')
+    emission = nodes.new(type='ShaderNodeEmission')
+    mix_shader = nodes.new(type='ShaderNodeMixShader')
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+    
     attr_node = nodes.new("ShaderNodeAttribute")
     attr_node.attribute_name = "my_opacity"
     attr_node.attribute_type = "OBJECT"
-    attr_node.location = (-300, -100)
-
-    principled.inputs["Base Color"].default_value = color
-
-    links.new(principled.outputs["BSDF"], output.inputs["Surface"])
-    links.new(attr_node.outputs["Fac"], principled.inputs["Alpha"])
+    
+    # Set node positions
+    transparent.location = (-300, 200)
+    emission.location = (-300, 0)
+    mix_shader.location = (0, 100)
+    output.location = (300, 100)
+    attr_node.location = (-600, 100)
+    
+    # Set Emission color
+    emission.inputs[0].default_value = color  # Use the provided color
+    emission.inputs[1].default_value = 1.0  # Emission strength
+    
+    # Link nodes
+    links.new(transparent.outputs[0], mix_shader.inputs[1])
+    links.new(emission.outputs[0], mix_shader.inputs[2])
+    links.new(mix_shader.outputs[0], output.inputs[0])
+    links.new(attr_node.outputs["Fac"], mix_shader.inputs[0])  # Use object opacity attribute
 
     return mat
 

@@ -88,6 +88,13 @@ for i in range(0,10):
 
 
 # Changelog
+
+
+## v0.1.8
+- Use an emission shader instead of principled bsdf, so that the text is not effected by scene light:
+![image](https://github.com/user-attachments/assets/02049d1a-d659-4b66-8215-4415f433b2d7)
+
+
 ## v0.1.7
 
 * Change blend_method for transparency. "Dithered" looks more grany, and the new default "Blended" looks smoother.

@@ -4,7 +4,7 @@ from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty
 from pathlib import Path
 import time
-from .node_groups import create_follow_curve_node_group
+from .node_groups import create_follow_curve_node_group, visibility_node_group
 
 # Global list to store our keymap entries for cleanup.
 addon_keymaps = []
@@ -305,10 +305,25 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         
         # Reset to initial value for display
         modifier["Socket_3"] = 0.0
+        
+        # Add visibility modifier
+        visibility_modifier = follower_obj.modifiers.new(name="Visibility", type="NODES")
+        visibility_modifier.node_group = visibility_node_group()
+        
+        # Set visibility to True initially
+        visibility_modifier["Socket_2"] = True
+        follower_obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
+        
+        # Make object invisible at the next frame
+        visibility_modifier["Socket_2"] = False
+        follower_obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
+        
+        # Reset to initial value for display
+        visibility_modifier["Socket_2"] = True
 
         self.report(
             {"INFO"},
-            f"Added Follow Path modifier to {follower_obj.name} following {curve_obj.name} with animation keyframes",
+            f"Added Follow Path and Visibility modifiers to {follower_obj.name} following {curve_obj.name} with animation keyframes",
         )
         return {"FINISHED"}
 

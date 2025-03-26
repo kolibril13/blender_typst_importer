@@ -174,3 +174,67 @@ def create_follow_curve_node_group():
 
 
     return follow_path
+
+
+#initialize visibility node group
+def visibility_node_group():
+    """
+    Creates a Geometry Nodes group that controls object visibility.
+    
+    Returns:
+        The created node group
+    """
+    visibility = bpy.data.node_groups.new(type='GeometryNodeTree', name="Visibility")
+
+    visibility.color_tag = 'NONE'
+    visibility.description = ""
+    visibility.default_group_node_width = 140
+    visibility.is_modifier = True
+
+    #visibility interface
+    #Socket Geometry
+    geometry_socket = visibility.interface.new_socket(name="Geometry", in_out='OUTPUT', socket_type='NodeSocketGeometry')
+    geometry_socket.attribute_domain = 'POINT'
+
+    #Socket Geometry
+    geometry_socket_1 = visibility.interface.new_socket(name="Geometry", in_out='INPUT', socket_type='NodeSocketGeometry')
+    geometry_socket_1.attribute_domain = 'POINT'
+
+    #Socket Visibility
+    visibility_socket = visibility.interface.new_socket(name="Visibility", in_out='INPUT', socket_type='NodeSocketBool')
+    visibility_socket.default_value = False
+    visibility_socket.attribute_domain = 'POINT'
+
+    #initialize visibility nodes
+    #node Group Input
+    group_input = visibility.nodes.new("NodeGroupInput")
+    group_input.name = "Group Input"
+
+    #node Group Output
+    group_output = visibility.nodes.new("NodeGroupOutput")
+    group_output.name = "Group Output"
+    group_output.is_active_output = True
+
+    #node Switch
+    switch = visibility.nodes.new("GeometryNodeSwitch")
+    switch.name = "Switch"
+    switch.input_type = 'GEOMETRY'
+
+    #Set locations
+    group_input.location = (-234, -30)
+    group_output.location = (139, 24)
+    switch.location = (-34, 33)
+
+    #Set dimensions
+    group_input.width, group_input.height = 140, 100
+    group_output.width, group_output.height = 140, 100
+    switch.width, switch.height = 140, 100
+
+    #initialize visibility links
+    #switch.Output -> group_output.Geometry
+    visibility.links.new(switch.outputs[0], group_output.inputs[0])
+    #group_input.Geometry -> switch.True
+    visibility.links.new(group_input.outputs[0], switch.inputs[2])
+    #group_input.Visibility -> switch.Switch
+    visibility.links.new(group_input.outputs[1], switch.inputs[0])
+    return visibility

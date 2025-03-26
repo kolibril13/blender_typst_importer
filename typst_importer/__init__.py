@@ -276,7 +276,7 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         follower_obj.select_set(True)
         bpy.context.view_layer.objects.active = follower_obj
         bpy.ops.object.duplicate()
-        moving_obj = bpy.context.active_obj
+        moving_obj = bpy.context.active_object
         standing_obj = follower_obj
         
         # Ensure the copy has a descriptive name

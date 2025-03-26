@@ -298,8 +298,8 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         modifier["Socket_3"] = 0.0
         follower_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
         
-        # Add keyframe 24 frames later with factor 1.0
-        next_frame = current_frame + 24
+        # Add keyframe 10 frames later with factor 1.0
+        next_frame = current_frame + 10
         modifier["Socket_3"] = 1.0
         follower_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
         

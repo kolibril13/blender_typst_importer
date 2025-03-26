@@ -171,8 +171,6 @@ def create_follow_curve_node_group():
     links.new(
         group_input.outputs[2], reroute.inputs[0]
     )  # Group Input.Factor -> Reroute.Input
-    links.new(
-        group_input.outputs[0], switch.inputs[1]
-    )  # Group Input.Geometry -> Switch.False
+
 
     return follow_path

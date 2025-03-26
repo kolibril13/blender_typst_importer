@@ -270,60 +270,72 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         if curve_obj.type != "CURVE":
             self.report({"WARNING"}, "Active object must be a curve")
             return {"CANCELLED"}
-
-        # Create a geometry nodes modifier
-        modifier = follower_obj.modifiers.new(name="FollowPath", type="NODES")
+            
+        # Create a copy of the follower obj
+        bpy.ops.object.select_all(action='DESELECT')
+        follower_obj.select_set(True)
+        bpy.context.view_layer.objects.active = follower_obj
+        bpy.ops.object.duplicate()
+        moving_obj = bpy.context.active_obj
+        standing_obj = follower_obj
+        
+        # Ensure the copy has a descriptive name
+        moving_obj.name = f"{follower_obj.name}_moving"
+        standing_obj.name = f"{follower_obj.name}_standing"
+        
+        # Create a geometry nodes modifier for the moving obj (for path following)
+        moving_obj_modifier = moving_obj.modifiers.new(name="FollowPath", type="NODES")
 
         # Always create a new geometry nodes group to avoid conflicts
         geometry_nodes = create_follow_curve_node_group()
 
         # Assign the node group to the modifier
-        modifier.node_group = geometry_nodes
+        moving_obj_modifier.node_group = geometry_nodes
 
-        # Set the curve object as the target - simpler approach
-        modifier["Socket_2"] = curve_obj
+        # Set the curve obj as the target
+        moving_obj_modifier["Socket_2"] = curve_obj
         
         # Get the current frame
         current_frame = context.scene.frame_current
         
         # Clear any existing keyframes for this property
-        if follower_obj.animation_data and follower_obj.animation_data.action:
-            fcurves = follower_obj.animation_data.action.fcurves
+        if moving_obj.animation_data and moving_obj.animation_data.action:
+            fcurves = moving_obj.animation_data.action.fcurves
             for fc in fcurves:
                 if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
-                    follower_obj.animation_data.action.fcurves.remove(fc)
+                    moving_obj.animation_data.action.fcurves.remove(fc)
                     break
         
         # Add keyframe at current frame with factor 0.0
-        modifier["Socket_3"] = 0.0
-        follower_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
+        moving_obj_modifier["Socket_3"] = 0.0
+        moving_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
         
         # Add keyframe 10 frames later with factor 1.0
         next_frame = current_frame + 10
-        modifier["Socket_3"] = 1.0
-        follower_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
+        moving_obj_modifier["Socket_3"] = 1.0
+        moving_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
         
         # Reset to initial value for display
-        modifier["Socket_3"] = 0.0
+        moving_obj_modifier["Socket_3"] = 0.0
         
-        # Add visibility modifier
-        visibility_modifier = follower_obj.modifiers.new(name="Visibility", type="NODES")
+        # Add visibility modifier to the standing obj
+        visibility_modifier = standing_obj.modifiers.new(name="Visibility", type="NODES")
         visibility_modifier.node_group = visibility_node_group()
         
         # Set visibility to True initially
         visibility_modifier["Socket_2"] = True
-        follower_obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
+        standing_obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
         
-        # Make object invisible at the next frame
+        # Make obj invisible at the next frame
         visibility_modifier["Socket_2"] = False
-        follower_obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
+        standing_obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
         
         # Reset to initial value for display
         visibility_modifier["Socket_2"] = True
 
         self.report(
             {"INFO"},
-            f"Added Follow Path and Visibility modifiers to {follower_obj.name} following {curve_obj.name} with animation keyframes",
+            f"Created objects: {standing_obj.name} (with Visibility modifier) and {moving_obj.name} (with Follow Path modifier)",
         )
         return {"FINISHED"}
 

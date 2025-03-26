@@ -1,7 +1,7 @@
 import bpy, mathutils
 
-
 # auto generated node group with https://extensions.blender.org/add-ons/node-to-python/
+
 
 def create_follow_curve_node_group():
     """
@@ -73,14 +73,46 @@ def create_follow_curve_node_group():
     reroute_001 = follow_path.nodes.new("NodeReroute")
     reroute_001.name = "Reroute.001"
     reroute_001.socket_idname = "NodeSocketFloatFactor"
+    
+    # Add new nodes for boundary checking
+    switch = follow_path.nodes.new("GeometryNodeSwitch")
+    switch.name = "Switch"
+    switch.input_type = "GEOMETRY"
+
+    compare = follow_path.nodes.new("FunctionNodeCompare")
+    compare.name = "Compare"
+    compare.data_type = "FLOAT"
+    compare.mode = "ELEMENT"
+    compare.operation = "GREATER_THAN"
+    compare.inputs[1].default_value = 0.0010000000474974513  # B
+
+    compare_001 = follow_path.nodes.new("FunctionNodeCompare")
+    compare_001.name = "Compare.001"
+    compare_001.data_type = "FLOAT"
+    compare_001.mode = "ELEMENT"
+    compare_001.operation = "LESS_THAN"
+    compare_001.inputs[1].default_value = 0.9990000128746033  # B
+
+    boolean_math = follow_path.nodes.new("FunctionNodeBooleanMath")
+    boolean_math.name = "Boolean Math"
+    boolean_math.operation = "AND"
+
+    reroute = follow_path.nodes.new("NodeReroute")
+    reroute.name = "Reroute"
+    reroute.socket_idname = "NodeSocketFloatFactor"
 
     # Set node locations
     group_input.location = (-380.0, 60.0)
-    group_output.location = (300.0, 60.0)
+    group_output.location = (460.0, 180.0)
     object_info.location = (-180.0, 0.0)
     sample_curve.location = (-20.0, 0.0)
     transform_geometry.location = (140.0, 100.0)
     reroute_001.location = (-180.0, -240.0)
+    switch.location = (300.0, 200.0)
+    compare.location = (-180.0, 360.0)
+    compare_001.location = (-180.0, 200.0)
+    boolean_math.location = (20.0, 340.0)
+    reroute.location = (-220.0, 180.0)
 
     # Set node dimensions
     group_input.width, group_input.height = 140.0, 100.0
@@ -88,7 +120,12 @@ def create_follow_curve_node_group():
     object_info.width, object_info.height = 140.0, 100.0
     sample_curve.width, sample_curve.height = 140.0, 100.0
     transform_geometry.width, transform_geometry.height = 140.0, 100.0
-    reroute_001.width, reroute_001.height = 16.0, 100.0
+    reroute_001.width, reroute_001.height = 20.0, 100.0
+    switch.width, switch.height = 140.0, 100.0
+    compare.width, compare.height = 140.0, 100.0
+    compare_001.width, compare_001.height = 140.0, 100.0
+    boolean_math.width, boolean_math.height = 140.0, 100.0
+    reroute.width, reroute.height = 20.0, 100.0
 
     # Create links
     links = follow_path.links
@@ -102,8 +139,8 @@ def create_follow_curve_node_group():
         group_input.outputs[0], transform_geometry.inputs[0]
     )  # Group Input.Geometry -> Transform Geometry.Geometry
     links.new(
-        transform_geometry.outputs[0], group_output.inputs[0]
-    )  # Transform Geometry.Geometry -> Group Output.Geometry
+        switch.outputs[0], group_output.inputs[0]
+    )  # Switch.Output -> Group Output.Geometry
     links.new(
         reroute_001.outputs[0], sample_curve.inputs[2]
     )  # Reroute.001.Output -> Sample Curve.Factor
@@ -113,5 +150,29 @@ def create_follow_curve_node_group():
     links.new(
         group_input.outputs[2], reroute_001.inputs[0]
     )  # Group Input.Factor -> Reroute.001.Input
+    links.new(
+        transform_geometry.outputs[0], switch.inputs[2]
+    )  # Transform Geometry.Geometry -> Switch.True
+    links.new(
+        compare.outputs[0], boolean_math.inputs[0]
+    )  # Compare.Result -> Boolean Math.Boolean
+    links.new(
+        compare_001.outputs[0], boolean_math.inputs[1]
+    )  # Compare.001.Result -> Boolean Math.Boolean
+    links.new(
+        boolean_math.outputs[0], switch.inputs[0]
+    )  # Boolean Math.Boolean -> Switch.Switch
+    links.new(
+        reroute.outputs[0], compare.inputs[0]
+    )  # Reroute.Output -> Compare.A
+    links.new(
+        reroute.outputs[0], compare_001.inputs[0]
+    )  # Reroute.Output -> Compare.001.A
+    links.new(
+        group_input.outputs[2], reroute.inputs[0]
+    )  # Group Input.Factor -> Reroute.Input
+    links.new(
+        group_input.outputs[0], switch.inputs[1]
+    )  # Group Input.Geometry -> Switch.False
 
     return follow_path

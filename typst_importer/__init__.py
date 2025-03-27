@@ -95,8 +95,6 @@ def get_two_selected_objects(context, report_func=None):
     return first_obj, second_obj
 
 
-
-
 class OBJECT_OT_align_to_active(bpy.types.Operator):
     """
     Aligns selected objects' X and Y coordinates to match the active object's location, while preserving Z coordinates.
@@ -206,12 +204,12 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
 def toggle_visibility(obj, current_frame, make_visible):
     """
     Helper function to toggle visibility of an object using Geometry Nodes modifier.
-    
+
     Args:
         obj: The object to toggle visibility for
         current_frame: The current frame in the timeline
         make_visible: Boolean indicating whether to make the object visible (True) or invisible (False)
-    
+
     Returns:
         The visibility modifier
     """
@@ -221,25 +219,25 @@ def toggle_visibility(obj, current_frame, make_visible):
         if modifier.type == "NODES" and modifier.name == "Visibility":
             visibility_modifier = modifier
             break
-    
+
     # If no visibility modifier exists, add one
     if not visibility_modifier:
         visibility_modifier = obj.modifiers.new(name="Visibility", type="NODES")
         visibility_modifier.node_group = visibility_node_group()
-    
+
     # Set initial state at current frame
     initial_state = not make_visible
     visibility_modifier["Socket_2"] = initial_state
     obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
-    
+
     # Set target state at next frame
     target_state = make_visible
     visibility_modifier["Socket_2"] = target_state
-    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
-    
+    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame + 1)
+
     # Reset to initial state for display
     visibility_modifier["Socket_2"] = initial_state
-    
+
     return visibility_modifier
 
 
@@ -279,6 +277,7 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
 
         return {"FINISHED"}
 
+
 class OBJECT_OT_follow_path(bpy.types.Operator):
     """
     Adds a Geometry Nodes modifier to the selected object, making it follow the active curve.
@@ -312,26 +311,26 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         if curve_obj.type != "CURVE":
             self.report({"WARNING"}, "Active object must be a curve")
             return {"CANCELLED"}
-            
+
         # Create a copy of the follower obj
-        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.select_all(action="DESELECT")
         follower_obj.select_set(True)
         bpy.context.view_layer.objects.active = follower_obj
         bpy.ops.object.duplicate()
         burst_obj = bpy.context.active_object
         arise_obj = follower_obj
-        
+
         # Ensure the copy has a descriptive name
         arise_obj.name = f"{follower_obj.name}_arise"
         burst_obj.name = f"{follower_obj.name}_burst"
-        
+
         # Get the collection of the first object
         first_obj_collection = None
         for collection in bpy.data.collections:
             if follower_obj.name in collection.objects:
                 first_obj_collection = collection
                 break
-        
+
         # Create a geometry nodes modifier for the moving obj (for path following)
         burst_obj_modifier = burst_obj.modifiers.new(name="FollowPath", type="NODES")
 
@@ -343,10 +342,10 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
 
         # Set the curve obj as the target
         burst_obj_modifier["Socket_2"] = curve_obj
-        
+
         # Get the current frame
         current_frame = context.scene.frame_current
-        
+
         # Clear any existing keyframes for this property
         if burst_obj.animation_data and burst_obj.animation_data.action:
             fcurves = burst_obj.animation_data.action.fcurves
@@ -354,19 +353,23 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
                 if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
                     burst_obj.animation_data.action.fcurves.remove(fc)
                     break
-        
+
         # Add keyframe at current frame with factor 0.0
         burst_obj_modifier["Socket_3"] = 0.0
-        burst_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
-        
+        burst_obj.keyframe_insert(
+            'modifiers["FollowPath"]["Socket_3"]', frame=current_frame
+        )
+
         # Add keyframe 10 frames later with factor 1.0
         next_frame = current_frame + 10
         burst_obj_modifier["Socket_3"] = 1.0
-        burst_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
-        
+        burst_obj.keyframe_insert(
+            'modifiers["FollowPath"]["Socket_3"]', frame=next_frame
+        )
+
         # Reset to initial value for display
         burst_obj_modifier["Socket_3"] = 0.0
-        
+
         # Toggle visibility of the standing object
         toggle_visibility(arise_obj, current_frame, make_visible=False)
 
@@ -377,21 +380,19 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         return {"FINISHED"}
 
 
-
-
 class OBJECT_OT_arc_and_follow(bpy.types.Operator):
     """
     Creates an arc between two objects and sets up the first object to follow the path.
-    
+
     Usage:
     1. Select two objects
     2. Run the operator to create an arc and make the first object follow it
     """
-    
+
     bl_idname = "object.arc_and_follow"
     bl_label = "Arc and Follow"
     bl_options = {"REGISTER", "UNDO"}
-    
+
     curve_height: bpy.props.FloatProperty(
         name="Curve Height",
         description="Adjustable Y parameter that controls the arc's curvature",
@@ -399,54 +400,54 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         min=-10.0,
         max=10.0,
     )
-    
+
     def execute(self, context):
         # Step 1: Get the two selected objects
         first_obj, second_obj = get_two_selected_objects(context, self.report)
         if first_obj is None:
             return {"CANCELLED"}
-            
+
         # Step 2: Create an arc between them
         first_co = first_obj.location.copy()
         second_co = second_obj.location.copy()
-        
+
         curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
         context.collection.objects.link(curve_obj)
-        
+
         # Step 3: Set up the first object to follow the path
         # Create a copy of the first object
-        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.select_all(action="DESELECT")
         first_obj.select_set(True)
         bpy.context.view_layer.objects.active = first_obj
         bpy.ops.object.duplicate()
         arise_obj = first_obj
         burst_obj = bpy.context.active_object
-        
+
         # Create a common prefix for all related objects
         prefix = f"{first_obj.name}"
-        
+
         # Ensure the copy has a descriptive name
         arise_obj.name = f"{prefix}_arise"
         burst_obj.name = f"{prefix}_burst"
-        
+
         # Get the collection of the first object
         first_obj_collection = None
         for collection in bpy.data.collections:
             if first_obj.name in collection.objects:
                 first_obj_collection = collection
                 break
-        
+
         # Create a copy of the second object at z=0
-        bpy.ops.object.select_all(action='DESELECT')
+        bpy.ops.object.select_all(action="DESELECT")
         second_obj.select_set(True)
         bpy.context.view_layer.objects.active = second_obj
         bpy.ops.object.duplicate()
         conclude_obj = bpy.context.active_object
         conclude_obj.name = f"{prefix}_conclude"
-        
+
         # Place the destination object at z=0
         conclude_obj.location.z = 0
-        
+
         # Move the destination object to the first object's collection
         if first_obj_collection:
             # Remove from current collection
@@ -455,22 +456,22 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
                     collection.objects.unlink(conclude_obj)
             # Add to first object's collection
             first_obj_collection.objects.link(conclude_obj)
-        
+
         # Create a geometry nodes modifier for the moving obj (for path following)
         burst_obj_modifier = burst_obj.modifiers.new(name="FollowPath", type="NODES")
-        
+
         # Always create a new geometry nodes group to avoid conflicts
         geometry_nodes = create_follow_curve_node_group()
-        
+
         # Assign the node group to the modifier
         burst_obj_modifier.node_group = geometry_nodes
-        
+
         # Set the curve obj as the target
         burst_obj_modifier["Socket_2"] = curve_obj
-        
+
         # Get the current frame
         current_frame = context.scene.frame_current
-        
+
         # Clear any existing keyframes for this property
         if burst_obj.animation_data and burst_obj.animation_data.action:
             fcurves = burst_obj.animation_data.action.fcurves
@@ -478,36 +479,43 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
                 if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
                     burst_obj.animation_data.action.fcurves.remove(fc)
                     break
-        
+
         # Add keyframe at current frame with factor 0.0
         burst_obj_modifier["Socket_3"] = 0.0
-        burst_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
-        
+        burst_obj.keyframe_insert(
+            'modifiers["FollowPath"]["Socket_3"]', frame=current_frame
+        )
+
         # Add keyframe 10 frames later with factor 1.0
         next_frame = current_frame + 10
         burst_obj_modifier["Socket_3"] = 1.0
-        burst_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
-        
+        burst_obj.keyframe_insert(
+            'modifiers["FollowPath"]["Socket_3"]', frame=next_frame
+        )
+
         # Reset to initial value for display
         burst_obj_modifier["Socket_3"] = 0.0
-        
+
         # Step 4: Toggle visibility of the standing object
         toggle_visibility(arise_obj, current_frame, make_visible=False)
-        
+
         # Step 5: Set up visibility for the destination object
-        
+
         # Make the destination object visible at the end of the animation
-        toggle_visibility(conclude_obj, next_frame-1, make_visible=True)
-        
+        toggle_visibility(conclude_obj, next_frame - 1, make_visible=True)
+
         self.report(
             {"INFO"},
-            f"Created arc and set up {burst_obj.name} to follow it. {arise_obj.name} will be hidden. {conclude_obj.name} will appear at the end."
+            f"Created arc and set up {burst_obj.name} to follow it. {arise_obj.name} will be hidden. {conclude_obj.name} will appear at the end.",
         )
         return {"FINISHED"}
+
+
 class OBJECT_OT_visibility_on(bpy.types.Operator):
     """
     Turn on visibility for selected objects
     """
+
     bl_idname = "object.visibility_on"
     bl_label = "On (Visibility)"
     bl_options = {"REGISTER", "UNDO"}
@@ -519,11 +527,14 @@ class OBJECT_OT_visibility_on(bpy.types.Operator):
     def execute(self, context):
         # Get the current frame
         current_frame = context.scene.frame_current
-        
+
         for obj in context.selected_objects:
             toggle_visibility(obj, current_frame, True)
-        
-        self.report({"INFO"}, f"Turned on visibility for {len(context.selected_objects)} objects")
+
+        self.report(
+            {"INFO"},
+            f"Turned on visibility for {len(context.selected_objects)} objects",
+        )
         return {"FINISHED"}
 
 
@@ -531,6 +542,7 @@ class OBJECT_OT_visibility_off(bpy.types.Operator):
     """
     Turn off visibility for selected objects
     """
+
     bl_idname = "object.visibility_off"
     bl_label = "Off (Visibility)"
     bl_options = {"REGISTER", "UNDO"}
@@ -542,12 +554,42 @@ class OBJECT_OT_visibility_off(bpy.types.Operator):
     def execute(self, context):
         # Get the current frame
         current_frame = context.scene.frame_current
-        
+
         for obj in context.selected_objects:
             toggle_visibility(obj, current_frame, False)
-        
-        self.report({"INFO"}, f"Turned off visibility for {len(context.selected_objects)} objects")
+
+        self.report(
+            {"INFO"},
+            f"Turned off visibility for {len(context.selected_objects)} objects",
+        )
         return {"FINISHED"}
+
+
+# Fade In operator
+class OBJECT_OT_fade_in(bpy.types.Operator):
+    """Fade in selected objects"""
+
+    bl_idname = "object.fade_in"
+    bl_label = "Fade In Objects"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        self.report({"INFO"}, "Hello World from Fade In Operator")
+        return {"FINISHED"}
+
+
+# Fade Out operator
+class OBJECT_OT_fade_out(bpy.types.Operator):
+    """Fade out selected objects"""
+
+    bl_idname = "object.fade_out"
+    bl_label = "Fade Out Objects"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        self.report({"INFO"}, "Hello World from Fade Out Operator")
+        return {"FINISHED"}
+
 
 # Add menu entries
 def snap_xy_menu_func(self, context):
@@ -596,6 +638,19 @@ def visibility_off_menu_func(self, context):
 
 # Import the helper function from typst_to_svg.py
 from .typst_to_svg import typst_to_blender_curves
+
+
+# Menu functions for the new operators
+def fade_in_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_fade_in.bl_idname, text="Fade In Objects", icon="TRIA_RIGHT"
+    )
+
+
+def fade_out_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_fade_out.bl_idname, text="Fade Out Objects", icon="TRIA_LEFT"
+    )
 
 
 # Operator for the button and drag-and-drop
@@ -684,9 +739,12 @@ def register():
     # 6. Visibility operators
     bpy.utils.register_class(OBJECT_OT_visibility_on)
     bpy.utils.register_class(OBJECT_OT_visibility_off)
-    # 7. Main Typst import operator that handles file selection and import
+    # 7. Fade operators
+    bpy.utils.register_class(OBJECT_OT_fade_in)
+    bpy.utils.register_class(OBJECT_OT_fade_out)
+    # 8. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 8. File handler for drag-and-drop support of .txt/.typ files
+    # 9. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
 
     # Add menu entries
@@ -695,16 +753,18 @@ def register():
     # 2. Add visibility controls to the Object menu (first)
     bpy.types.VIEW3D_MT_object.prepend(visibility_off_menu_func)
     bpy.types.VIEW3D_MT_object.prepend(visibility_on_menu_func)
-    # 3. Add arc and follow to the Object menu
+    # 3. Add fade controls to the Object menu
+    bpy.types.VIEW3D_MT_object.prepend(fade_out_menu_func)
+    bpy.types.VIEW3D_MT_object.prepend(fade_in_menu_func)
+    # 4. Add arc and follow to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(arc_and_follow_menu_func)
-    # 4. Add follow path to the Object menu
+    # 5. Add follow path to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(follow_path_menu_func)
-
-    # 5. Add arc creation to the Object menu
+    # 6. Add arc creation to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(create_arc_menu_func)
-    # 6. Add XY snapping to the Object menu
+    # 7. Add XY snapping to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
-    # 7. Add group movement to the Object menu
+    # 8. Add group movement to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
 
     # Set up keyboard shortcuts
@@ -742,13 +802,18 @@ def unregister():
     bpy.types.VIEW3D_MT_object.remove(arc_and_follow_menu_func)
     # 6. Remove follow path from Object menu
     bpy.types.VIEW3D_MT_object.remove(follow_path_menu_func)
-    # 7. Remove visibility controls from Object menu
+    # 7. Remove fade controls from Object menu
+    bpy.types.VIEW3D_MT_object.remove(fade_in_menu_func)
+    bpy.types.VIEW3D_MT_object.remove(fade_out_menu_func)
+    # 8. Remove visibility controls from Object menu
     bpy.types.VIEW3D_MT_object.remove(visibility_on_menu_func)
     bpy.types.VIEW3D_MT_object.remove(visibility_off_menu_func)
 
     # Unregister Blender classes in reverse order
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
+    bpy.utils.unregister_class(OBJECT_OT_fade_out)
+    bpy.utils.unregister_class(OBJECT_OT_fade_in)
     bpy.utils.unregister_class(OBJECT_OT_visibility_off)
     bpy.utils.unregister_class(OBJECT_OT_visibility_on)
     bpy.utils.unregister_class(OBJECT_OT_arc_and_follow)

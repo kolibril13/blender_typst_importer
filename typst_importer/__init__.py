@@ -203,9 +203,6 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
         return {"FINISHED"}
 
 
-
-
-
 def toggle_visibility(obj, current_frame, make_visible):
     """
     Helper function to toggle visibility of an object using Geometry Nodes modifier.
@@ -321,56 +318,63 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         follower_obj.select_set(True)
         bpy.context.view_layer.objects.active = follower_obj
         bpy.ops.object.duplicate()
-        moving_obj = bpy.context.active_object
-        standing_obj = follower_obj
+        burst_obj = bpy.context.active_object
+        arise_obj = follower_obj
         
         # Ensure the copy has a descriptive name
-        moving_obj.name = f"{follower_obj.name}_moving"
-        standing_obj.name = f"{follower_obj.name}_standing"
+        arise_obj.name = f"{follower_obj.name}_arise"
+        burst_obj.name = f"{follower_obj.name}_burst"
+        
+        # Get the collection of the first object
+        first_obj_collection = None
+        for collection in bpy.data.collections:
+            if follower_obj.name in collection.objects:
+                first_obj_collection = collection
+                break
         
         # Create a geometry nodes modifier for the moving obj (for path following)
-        moving_obj_modifier = moving_obj.modifiers.new(name="FollowPath", type="NODES")
+        burst_obj_modifier = burst_obj.modifiers.new(name="FollowPath", type="NODES")
 
         # Always create a new geometry nodes group to avoid conflicts
         geometry_nodes = create_follow_curve_node_group()
 
         # Assign the node group to the modifier
-        moving_obj_modifier.node_group = geometry_nodes
+        burst_obj_modifier.node_group = geometry_nodes
 
         # Set the curve obj as the target
-        moving_obj_modifier["Socket_2"] = curve_obj
+        burst_obj_modifier["Socket_2"] = curve_obj
         
         # Get the current frame
         current_frame = context.scene.frame_current
         
         # Clear any existing keyframes for this property
-        if moving_obj.animation_data and moving_obj.animation_data.action:
-            fcurves = moving_obj.animation_data.action.fcurves
+        if burst_obj.animation_data and burst_obj.animation_data.action:
+            fcurves = burst_obj.animation_data.action.fcurves
             for fc in fcurves:
                 if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
-                    moving_obj.animation_data.action.fcurves.remove(fc)
+                    burst_obj.animation_data.action.fcurves.remove(fc)
                     break
         
         # Add keyframe at current frame with factor 0.0
-        moving_obj_modifier["Socket_3"] = 0.0
-        moving_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
+        burst_obj_modifier["Socket_3"] = 0.0
+        burst_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
         
         # Add keyframe 10 frames later with factor 1.0
         next_frame = current_frame + 10
-        moving_obj_modifier["Socket_3"] = 1.0
-        moving_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
+        burst_obj_modifier["Socket_3"] = 1.0
+        burst_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
         
         # Reset to initial value for display
-        moving_obj_modifier["Socket_3"] = 0.0
+        burst_obj_modifier["Socket_3"] = 0.0
         
-        toggle_visibility(standing_obj, current_frame, make_visible = False)
+        # Toggle visibility of the standing object
+        toggle_visibility(arise_obj, current_frame, make_visible=False)
 
         self.report(
             {"INFO"},
-            f"Created objects: {standing_obj.name} (with Visibility modifier) and {moving_obj.name} (with Follow Path modifier)",
+            f"Created objects: {arise_obj.name} (with Visibility modifier) and {burst_obj.name} (with Follow Path modifier)",
         )
         return {"FINISHED"}
-
 
 
 

@@ -237,6 +237,49 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
 
         return {"FINISHED"}
 
+
+
+def toggle_visibility(obj, current_frame, make_visible):
+    """
+    Helper function to toggle visibility of an object using Geometry Nodes modifier.
+    
+    Args:
+        obj: The object to toggle visibility for
+        current_frame: The current frame in the timeline
+        make_visible: Boolean indicating whether to make the object visible (True) or invisible (False)
+    
+    Returns:
+        The visibility modifier
+    """
+    # Check if the object already has a visibility modifier
+    visibility_modifier = None
+    for modifier in obj.modifiers:
+        if modifier.type == "NODES" and modifier.name == "Visibility":
+            visibility_modifier = modifier
+            break
+    
+    # If no visibility modifier exists, add one
+    if not visibility_modifier:
+        visibility_modifier = obj.modifiers.new(name="Visibility", type="NODES")
+        visibility_modifier.node_group = visibility_node_group()
+    
+    # Set initial state at current frame
+    initial_state = not make_visible
+    visibility_modifier["Socket_2"] = initial_state
+    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
+    
+    # Set target state at next frame
+    target_state = make_visible
+    visibility_modifier["Socket_2"] = target_state
+    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
+    
+    # Reset to initial state for display
+    visibility_modifier["Socket_2"] = initial_state
+    
+    return visibility_modifier
+
+
+
 class OBJECT_OT_follow_path(bpy.types.Operator):
     """
     Adds a Geometry Nodes modifier to the selected object, making it follow the active curve.
@@ -318,20 +361,7 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         # Reset to initial value for display
         moving_obj_modifier["Socket_3"] = 0.0
         
-        # Add visibility modifier to the standing obj
-        visibility_modifier = standing_obj.modifiers.new(name="Visibility", type="NODES")
-        visibility_modifier.node_group = visibility_node_group()
-        
-        # Set visibility to True initially
-        visibility_modifier["Socket_2"] = True
-        standing_obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
-        
-        # Make obj invisible at the next frame
-        visibility_modifier["Socket_2"] = False
-        standing_obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
-        
-        # Reset to initial value for display
-        visibility_modifier["Socket_2"] = True
+        toggle_visibility(standing_obj, current_frame, make_visible = False)
 
         self.report(
             {"INFO"},
@@ -339,45 +369,6 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         )
         return {"FINISHED"}
 
-
-def toggle_visibility(obj, current_frame, make_visible):
-    """
-    Helper function to toggle visibility of an object using Geometry Nodes modifier.
-    
-    Args:
-        obj: The object to toggle visibility for
-        current_frame: The current frame in the timeline
-        make_visible: Boolean indicating whether to make the object visible (True) or invisible (False)
-    
-    Returns:
-        The visibility modifier
-    """
-    # Check if the object already has a visibility modifier
-    visibility_modifier = None
-    for modifier in obj.modifiers:
-        if modifier.type == "NODES" and modifier.name == "Visibility":
-            visibility_modifier = modifier
-            break
-    
-    # If no visibility modifier exists, add one
-    if not visibility_modifier:
-        visibility_modifier = obj.modifiers.new(name="Visibility", type="NODES")
-        visibility_modifier.node_group = visibility_node_group()
-    
-    # Set initial state at current frame
-    initial_state = not make_visible
-    visibility_modifier["Socket_2"] = initial_state
-    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
-    
-    # Set target state at next frame
-    target_state = make_visible
-    visibility_modifier["Socket_2"] = target_state
-    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
-    
-    # Reset to initial state for display
-    visibility_modifier["Socket_2"] = initial_state
-    
-    return visibility_modifier
 
 
 class OBJECT_OT_visibility_on(bpy.types.Operator):

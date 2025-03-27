@@ -6,6 +6,74 @@ from pathlib import Path
 import time
 from .node_groups import create_follow_curve_node_group, visibility_node_group
 
+
+# Import the helper function from typst_to_svg.py
+from .typst_to_svg import typst_to_blender_curves
+
+
+# Operator for the button and drag-and-drop
+class ImportTypstOperator(bpy.types.Operator, ImportHelper):
+    """Operator to import a .txt or .typ file, compile it via Typst, and import as SVG in Blender."""
+
+    bl_idname = "import_scene.import_txt_typst"
+    bl_label = "Import Typst File (.txt/.typ)"
+    bl_options = {"PRESET", "UNDO"}
+
+    # ImportHelper provides a default 'filepath' property,
+    # but we redefine it here with SKIP_SAVE to support drag–n–drop.
+    filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})
+
+    # Set a default extension (the user can change it in the file browser)
+    filename_ext = ".txt"
+    filter_glob: StringProperty(default="*.txt;*.typ", options={"HIDDEN"}, maxlen=255)
+
+    def execute(self, context):
+        # Verify that the selected file is either a .txt or .typ file.
+        if not self.filepath.lower().endswith((".txt", ".typ")):
+            self.report({"WARNING"}, "Selected file is not a TXT or TYP file")
+            return {"CANCELLED"}
+
+        # Prepare file variables
+        typst_file = Path(self.filepath)
+        file_name_without_ext = typst_file.stem
+
+        # Start the timer
+        start_time = time.perf_counter()
+
+        # Compile and import the file using our helper function
+        collection = typst_to_blender_curves(typst_file)
+
+        elapsed_time_ms = (time.perf_counter() - start_time) * 1000
+        self.report(
+            {"INFO"},
+            f" 🦢  Typst Importer: {typst_file.name} rendered in {elapsed_time_ms:.2f} ms as {collection.name}",
+        )
+        return {"FINISHED"}
+
+    def invoke(self, context, event):
+        # If the operator was invoked with a filepath (drag–n–drop), execute directly.
+        if self.filepath:
+            return self.execute(context)
+        # Otherwise, open the file browser.
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
+
+
+# File Handler for drag-and-drop support
+class TXT_FH_import(bpy.types.FileHandler):
+    """A file handler to allow .txt and .typ files to be dragged and dropped directly into Blender."""
+
+    bl_idname = "TXT_FH_import"
+    bl_label = "File handler for TXT/TYP import (Typst)"
+    bl_import_operator = "import_scene.import_txt_typst"
+    bl_file_extensions = ".txt;.typ"
+
+    @classmethod
+    def poll_drop(cls, context):
+        # Allow drag–n–drop
+        return context.area is not None
+
+
 # Global list to store our keymap entries for cleanup.
 addon_keymaps = []
 
@@ -271,7 +339,16 @@ class OBJECT_OT_create_arc(bpy.types.Operator):
         second_co = second_obj.location.copy()
 
         curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
-        context.collection.objects.link(curve_obj)
+
+        # Check if 'beziers' collection exists, if not create it
+        beziers_collection = bpy.data.collections.get("beziers")
+        if not beziers_collection:
+            beziers_collection = bpy.data.collections.new("beziers")
+            context.scene.collection.children.link(beziers_collection)
+
+        # Add the curve to the beziers collection
+        beziers_collection.objects.link(curve_obj)
+
         context.view_layer.objects.active = curve_obj
         curve_obj.select_set(True)
 
@@ -412,7 +489,15 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         second_co = second_obj.location.copy()
 
         curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
-        context.collection.objects.link(curve_obj)
+
+        # Check if 'beziers' collection exists, if not create it
+        beziers_collection = bpy.data.collections.get("beziers")
+        if not beziers_collection:
+            beziers_collection = bpy.data.collections.new("beziers")
+            context.scene.collection.children.link(beziers_collection)
+
+        # Add the curve to the beziers collection
+        beziers_collection.objects.link(curve_obj)
 
         # Step 3: Set up the first object to follow the path
         # Create a copy of the first object
@@ -581,31 +666,32 @@ class OBJECT_OT_fade_in(bpy.types.Operator):
         # Get the current frame
         current_frame = context.scene.frame_current
         end_frame = current_frame + 10
-        
+
         for obj in context.selected_objects:
             # First make the object visible
             toggle_visibility(obj, current_frame, True)  # Then turn visiblity on
-            
+
             # Ensure the opacity property exists
             if "opacity" not in obj:
                 obj["opacity"] = 0.0
-            
+
             # Set initial opacity to 0
             obj["opacity"] = 0.0
             obj.keyframe_insert(data_path='["opacity"]', frame=current_frame)
-            
+
             # Set final opacity to 1
             obj["opacity"] = 1.0
             obj.keyframe_insert(data_path='["opacity"]', frame=end_frame)
-            
+
             # Reset to initial value for display
             obj["opacity"] = 0.0
-        
+
         self.report(
             {"INFO"},
-            f"Fading in {len(context.selected_objects)} objects over 10 frames"
+            f"Fading in {len(context.selected_objects)} objects over 10 frames",
         )
         return {"FINISHED"}
+
 
 # Fade In and Move to Animation Plane operator
 class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
@@ -623,70 +709,70 @@ class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
         # Get the current frame
         current_frame = context.scene.frame_current
         end_frame = current_frame + 10
-        
+
         # Get the first collection in the scene
         target_collection = None
         if bpy.data.collections:
             target_collection = bpy.data.collections[0]
-        
+
         if not target_collection:
             self.report({"WARNING"}, "No collections found in the scene")
             return {"CANCELLED"}
-        
+
         created_objects = []
-        
+
         for obj in context.selected_objects:
             # Create a copy of the object
             bpy.ops.object.select_all(action="DESELECT")
             obj.select_set(True)
             context.view_layer.objects.active = obj
             bpy.ops.object.duplicate()
-            
+
             # Get the newly created copy
             copy_obj = context.active_object
             copy_obj.name = f"{obj.name}_animation"
-            
+
             # Set z coordinate to 0
             copy_obj.location.z = 0
-            
+
             # Move the copy to the first collection
             # First remove from current collections
             for collection in bpy.data.collections:
                 if copy_obj.name in collection.objects:
                     collection.objects.unlink(copy_obj)
-            
+
             # Add to target collection
             target_collection.objects.link(copy_obj)
-            
+            #
             # Make the object visible
             toggle_visibility(copy_obj, current_frame, True)
-            
+
             # Ensure the opacity property exists
             if "opacity" not in copy_obj:
                 copy_obj["opacity"] = 0.0
-            
+
             # Set initial opacity to 0
             copy_obj["opacity"] = 0.0
             copy_obj.keyframe_insert(data_path='["opacity"]', frame=current_frame)
-            
+
             # Set final opacity to 1
             copy_obj["opacity"] = 1.0
             copy_obj.keyframe_insert(data_path='["opacity"]', frame=end_frame)
-            
+
             # Reset to initial value for display
             copy_obj["opacity"] = 0.0
-            
+
             created_objects.append(copy_obj.name)
-        
+
         # Select all the newly created objects
         bpy.ops.object.select_all(action="DESELECT")
         for obj_name in created_objects:
             if obj_name in bpy.data.objects:
                 bpy.data.objects[obj_name].select_set(True)
-        
+
         self.report(
             {"INFO"},
-            f"Created and fading in {len(created_objects)} objects in collection '{target_collection.name}'"
+            f"Created and fading in {len(created_objects)} objects in collection '{target_collection.name}'",
         )
         return {"FINISHED"}
 
@@ -707,135 +793,93 @@ class OBJECT_OT_fade_out(bpy.types.Operator):
         # Get the current frame
         current_frame = context.scene.frame_current
         end_frame = current_frame + 10
-        
+
         for obj in context.selected_objects:
             # Ensure the opacity property exists
             if "opacity" not in obj:
                 obj["opacity"] = 1.0
-            
+
             # Set initial opacity to 1
             obj["opacity"] = 1.0
             obj.keyframe_insert(data_path='["opacity"]', frame=current_frame)
-            
+
             # Set final opacity to 0
             obj["opacity"] = 0.0
             obj.keyframe_insert(data_path='["opacity"]', frame=end_frame)
-            
+
             # After fading out, make the object invisible
             toggle_visibility(obj, end_frame, False)
-            
+
             # Reset to initial value for display
             obj["opacity"] = 1.0
-        
+
         self.report(
             {"INFO"},
-            f"Fading out {len(context.selected_objects)} objects over 10 frames"
+            f"Fading out {len(context.selected_objects)} objects over 10 frames",
         )
         return {"FINISHED"}
 
+
 # Panel for the N-panel sidebar
 class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Typst Tools'
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Typst Tools"
     bl_label = "Animation Tools"
-    
+
     def draw(self, context):
         layout = self.layout
-        
+
         # Alignment tools
         box = layout.box()
         box.label(text="Alignment")
-        box.operator(OBJECT_OT_align_to_active.bl_idname, text="Align Object (XY)", icon="SNAP_NORMAL")
-        box.operator(OBJECT_OT_align_collection.bl_idname, text="Align Collection (XY)", icon="GROUP")
-        
+        box.operator(
+            OBJECT_OT_align_to_active.bl_idname,
+            text="Align Object (XY)",
+            icon="SNAP_NORMAL",
+        )
+        box.operator(
+            OBJECT_OT_align_collection.bl_idname,
+            text="Align Collection (XY)",
+            icon="GROUP",
+        )
+
         # Arc and path tools
         box = layout.box()
         box.label(text="Path Animation")
-        box.operator(OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="SPHERECURVE")
-        box.operator(OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH")
-        box.operator(OBJECT_OT_arc_and_follow.bl_idname, text="Arc and Follow", icon="FORCE_CURVE")
-        
+        box.operator(
+            OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="SPHERECURVE"
+        )
+        box.operator(
+            OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH"
+        )
+        box.operator(
+            OBJECT_OT_arc_and_follow.bl_idname,
+            text="Arc and Follow",
+            icon="FORCE_CURVE",
+        )
+
         # Visibility tools
         box = layout.box()
         box.label(text="Visibility")
         row = box.row(align=True)
         row.operator(OBJECT_OT_visibility_on.bl_idname, text="On", icon="HIDE_OFF")
         row.operator(OBJECT_OT_visibility_off.bl_idname, text="Off", icon="HIDE_ON")
-        
+
         # Fade tools
         box = layout.box()
         box.label(text="Fade Effects")
-        box.operator(OBJECT_OT_fade_in.bl_idname, text="Fade In Objects", icon="TRIA_RIGHT")
-        box.operator(OBJECT_OT_fade_in_to_plane.bl_idname, text="Fade In (To Animation Plane)", icon="TRACKING_FORWARDS")
-        box.operator(OBJECT_OT_fade_out.bl_idname, text="Fade Out Objects", icon="TRIA_LEFT")
-
-
-# Import the helper function from typst_to_svg.py
-from .typst_to_svg import typst_to_blender_curves
-
-
-# Operator for the button and drag-and-drop
-class ImportTypstOperator(bpy.types.Operator, ImportHelper):
-    """Operator to import a .txt or .typ file, compile it via Typst, and import as SVG in Blender."""
-
-    bl_idname = "import_scene.import_txt_typst"
-    bl_label = "Import Typst File (.txt/.typ)"
-    bl_options = {"PRESET", "UNDO"}
-
-    # ImportHelper provides a default 'filepath' property,
-    # but we redefine it here with SKIP_SAVE to support drag–n–drop.
-    filepath: StringProperty(subtype="FILE_PATH", options={"SKIP_SAVE"})
-
-    # Set a default extension (the user can change it in the file browser)
-    filename_ext = ".txt"
-    filter_glob: StringProperty(default="*.txt;*.typ", options={"HIDDEN"}, maxlen=255)
-
-    def execute(self, context):
-        # Verify that the selected file is either a .txt or .typ file.
-        if not self.filepath.lower().endswith((".txt", ".typ")):
-            self.report({"WARNING"}, "Selected file is not a TXT or TYP file")
-            return {"CANCELLED"}
-
-        # Prepare file variables
-        typst_file = Path(self.filepath)
-        file_name_without_ext = typst_file.stem
-
-        # Start the timer
-        start_time = time.perf_counter()
-
-        # Compile and import the file using our helper function
-        collection = typst_to_blender_curves(typst_file)
-
-        elapsed_time_ms = (time.perf_counter() - start_time) * 1000
-        self.report(
-            {"INFO"},
-            f" 🦢  Typst Importer: {typst_file.name} rendered in {elapsed_time_ms:.2f} ms as {collection.name}",
+        box.operator(
+            OBJECT_OT_fade_in.bl_idname, text="Fade In Objects", icon="TRIA_RIGHT"
         )
-        return {"FINISHED"}
-
-    def invoke(self, context, event):
-        # If the operator was invoked with a filepath (drag–n–drop), execute directly.
-        if self.filepath:
-            return self.execute(context)
-        # Otherwise, open the file browser.
-        context.window_manager.fileselect_add(self)
-        return {"RUNNING_MODAL"}
-
-
-# File Handler for drag-and-drop support
-class TXT_FH_import(bpy.types.FileHandler):
-    """A file handler to allow .txt and .typ files to be dragged and dropped directly into Blender."""
-
-    bl_idname = "TXT_FH_import"
-    bl_label = "File handler for TXT/TYP import (Typst)"
-    bl_import_operator = "import_scene.import_txt_typst"
-    bl_file_extensions = ".txt;.typ"
-
-    @classmethod
-    def poll_drop(cls, context):
-        # Allow drag–n–drop
-        return context.area is not None
+        box.operator(
+            OBJECT_OT_fade_in_to_plane.bl_idname,
+            text="Fade In (To Animation Plane)",
+            icon="TRACKING_FORWARDS",
+        )
+        box.operator(
+            OBJECT_OT_fade_out.bl_idname, text="Fade Out Objects", icon="TRIA_LEFT"
+        )
 
 
 def menu_func_import(self, context):

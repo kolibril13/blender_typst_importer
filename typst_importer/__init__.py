@@ -616,10 +616,39 @@ class OBJECT_OT_fade_out(bpy.types.Operator):
     bl_label = "Fade Out Objects"
     bl_options = {"REGISTER", "UNDO"}
 
-    def execute(self, context):
-        self.report({"INFO"}, "Hello World from Fade Out Operator")
-        return {"FINISHED"}
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects
 
+    def execute(self, context):
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        end_frame = current_frame + 10
+        
+        for obj in context.selected_objects:
+            # Ensure the opacity property exists
+            if "opacity" not in obj:
+                obj["opacity"] = 1.0
+            
+            # Set initial opacity to 1
+            obj["opacity"] = 1.0
+            obj.keyframe_insert(data_path='["opacity"]', frame=current_frame)
+            
+            # Set final opacity to 0
+            obj["opacity"] = 0.0
+            obj.keyframe_insert(data_path='["opacity"]', frame=end_frame)
+            
+            # After fading out, make the object invisible
+            toggle_visibility(obj, end_frame, False)
+            
+            # Reset to initial value for display
+            obj["opacity"] = 1.0
+        
+        self.report(
+            {"INFO"},
+            f"Fading out {len(context.selected_objects)} objects over 10 frames"
+        )
+        return {"FINISHED"}
 
 # Add menu entries
 def snap_xy_menu_func(self, context):

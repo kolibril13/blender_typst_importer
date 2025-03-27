@@ -415,12 +415,12 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         first_obj.select_set(True)
         bpy.context.view_layer.objects.active = first_obj
         bpy.ops.object.duplicate()
-        moving_obj = bpy.context.active_object
-        standing_obj = first_obj
+        arise_obj = first_obj
+        burst_obj = bpy.context.active_object
         
         # Ensure the copy has a descriptive name
-        moving_obj.name = f"{first_obj.name}_moving"
-        standing_obj.name = f"{first_obj.name}_standing"
+        arise_obj.name = f"{first_obj.name}_arise"
+        burst_obj.name = f"{first_obj.name}_burst"
         
         # Get the collection of the first object
         first_obj_collection = None
@@ -434,67 +434,67 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         second_obj.select_set(True)
         bpy.context.view_layer.objects.active = second_obj
         bpy.ops.object.duplicate()
-        destination_obj = bpy.context.active_object
-        destination_obj.name = f"{second_obj.name}_destination"
+        conclude_obj = bpy.context.active_object
+        conclude_obj.name = f"{second_obj.name}_conclude"
         
         # Place the destination object at z=0
-        destination_obj.location.z = 0
+        conclude_obj.location.z = 0
         
         # Move the destination object to the first object's collection
         if first_obj_collection:
             # Remove from current collection
             for collection in bpy.data.collections:
-                if destination_obj.name in collection.objects:
-                    collection.objects.unlink(destination_obj)
+                if conclude_obj.name in collection.objects:
+                    collection.objects.unlink(conclude_obj)
             # Add to first object's collection
-            first_obj_collection.objects.link(destination_obj)
+            first_obj_collection.objects.link(conclude_obj)
         
         # Create a geometry nodes modifier for the moving obj (for path following)
-        moving_obj_modifier = moving_obj.modifiers.new(name="FollowPath", type="NODES")
+        burst_obj_modifier = burst_obj.modifiers.new(name="FollowPath", type="NODES")
         
         # Always create a new geometry nodes group to avoid conflicts
         geometry_nodes = create_follow_curve_node_group()
         
         # Assign the node group to the modifier
-        moving_obj_modifier.node_group = geometry_nodes
+        burst_obj_modifier.node_group = geometry_nodes
         
         # Set the curve obj as the target
-        moving_obj_modifier["Socket_2"] = curve_obj
+        burst_obj_modifier["Socket_2"] = curve_obj
         
         # Get the current frame
         current_frame = context.scene.frame_current
         
         # Clear any existing keyframes for this property
-        if moving_obj.animation_data and moving_obj.animation_data.action:
-            fcurves = moving_obj.animation_data.action.fcurves
+        if burst_obj.animation_data and burst_obj.animation_data.action:
+            fcurves = burst_obj.animation_data.action.fcurves
             for fc in fcurves:
                 if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
-                    moving_obj.animation_data.action.fcurves.remove(fc)
+                    burst_obj.animation_data.action.fcurves.remove(fc)
                     break
         
         # Add keyframe at current frame with factor 0.0
-        moving_obj_modifier["Socket_3"] = 0.0
-        moving_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
+        burst_obj_modifier["Socket_3"] = 0.0
+        burst_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
         
         # Add keyframe 10 frames later with factor 1.0
         next_frame = current_frame + 10
-        moving_obj_modifier["Socket_3"] = 1.0
-        moving_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
+        burst_obj_modifier["Socket_3"] = 1.0
+        burst_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
         
         # Reset to initial value for display
-        moving_obj_modifier["Socket_3"] = 0.0
+        burst_obj_modifier["Socket_3"] = 0.0
         
         # Step 4: Toggle visibility of the standing object
-        toggle_visibility(standing_obj, current_frame, make_visible=False)
+        toggle_visibility(arise_obj, current_frame, make_visible=False)
         
         # Step 5: Set up visibility for the destination object
         
         # Make the destination object visible at the end of the animation
-        toggle_visibility(destination_obj, next_frame-1, make_visible=True)
+        toggle_visibility(conclude_obj, next_frame-1, make_visible=True)
         
         self.report(
             {"INFO"},
-            f"Created arc and set up {moving_obj.name} to follow it. {standing_obj.name} will be hidden. {destination_obj.name} will appear at the end."
+            f"Created arc and set up {burst_obj.name} to follow it. {arise_obj.name} will be hidden. {conclude_obj.name} will appear at the end."
         )
         return {"FINISHED"}
 class OBJECT_OT_visibility_on(bpy.types.Operator):

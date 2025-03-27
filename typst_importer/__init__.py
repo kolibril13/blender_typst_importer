@@ -238,6 +238,23 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class OBJECT_OT_arc_and_follow(bpy.types.Operator):
+    """
+    Creates an arc between two objects and sets up the first object to follow the path.
+    
+    Usage:
+    1. Select two objects
+    2. Run the operator to create an arc and make the first object follow it
+    """
+    
+    bl_idname = "object.arc_and_follow"
+    bl_label = "Arc and Follow"
+    bl_options = {"REGISTER", "UNDO"}
+    
+    def execute(self, context):
+        self.report({"INFO"}, "Hello World")
+        return {"FINISHED"}
+
 
 def toggle_visibility(obj, current_frame, make_visible):
     """
@@ -443,6 +460,12 @@ def follow_path_menu_func(self, context):
     )
 
 
+def arc_and_follow_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_arc_and_follow.bl_idname, text="Arc and Follow", icon="FORCE_CURVE"
+    )
+
+
 def visibility_on_menu_func(self, context):
     self.layout.operator(
         OBJECT_OT_visibility_on.bl_idname, text="On (Visibility)", icon="HIDE_OFF"
@@ -538,14 +561,16 @@ def register():
     bpy.utils.register_class(OBJECT_OT_align_collection)
     # 3. Arc creation operator
     bpy.utils.register_class(OBJECT_OT_create_arc)
-    # 4. Follow path operator
+    # 4. Arc and Follow operator
+    bpy.utils.register_class(OBJECT_OT_arc_and_follow)
+    # 5. Follow path operator
     bpy.utils.register_class(OBJECT_OT_follow_path)
-    # 5. Visibility operators
+    # 6. Visibility operators
     bpy.utils.register_class(OBJECT_OT_visibility_on)
     bpy.utils.register_class(OBJECT_OT_visibility_off)
-    # 6. Main Typst import operator that handles file selection and import
+    # 7. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 7. File handler for drag-and-drop support of .txt/.typ files
+    # 8. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
 
     # Add menu entries
@@ -554,13 +579,16 @@ def register():
     # 2. Add visibility controls to the Object menu (first)
     bpy.types.VIEW3D_MT_object.prepend(visibility_off_menu_func)
     bpy.types.VIEW3D_MT_object.prepend(visibility_on_menu_func)
-    # 3. Add follow path to the Object menu
+    # 3. Add arc and follow to the Object menu
+    bpy.types.VIEW3D_MT_object.prepend(arc_and_follow_menu_func)
+    # 4. Add follow path to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(follow_path_menu_func)
-    # 4. Add arc creation to the Object menu
+
+    # 5. Add arc creation to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(create_arc_menu_func)
-    # 5. Add XY snapping to the Object menu
+    # 6. Add XY snapping to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
-    # 6. Add group movement to the Object menu
+    # 7. Add group movement to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
 
     # Set up keyboard shortcuts
@@ -594,9 +622,11 @@ def unregister():
     bpy.types.VIEW3D_MT_object.remove(move_group_menu_func)
     # 4. Remove arc creation from Object menu
     bpy.types.VIEW3D_MT_object.remove(create_arc_menu_func)
-    # 5. Remove follow path from Object menu
+    # 5. Remove arc and follow from Object menu
+    bpy.types.VIEW3D_MT_object.remove(arc_and_follow_menu_func)
+    # 6. Remove follow path from Object menu
     bpy.types.VIEW3D_MT_object.remove(follow_path_menu_func)
-    # 6. Remove visibility controls from Object menu
+    # 7. Remove visibility controls from Object menu
     bpy.types.VIEW3D_MT_object.remove(visibility_on_menu_func)
     bpy.types.VIEW3D_MT_object.remove(visibility_off_menu_func)
 
@@ -605,6 +635,7 @@ def unregister():
     bpy.utils.unregister_class(ImportTypstOperator)
     bpy.utils.unregister_class(OBJECT_OT_visibility_off)
     bpy.utils.unregister_class(OBJECT_OT_visibility_on)
+    bpy.utils.unregister_class(OBJECT_OT_arc_and_follow)
     bpy.utils.unregister_class(OBJECT_OT_follow_path)
     bpy.utils.unregister_class(OBJECT_OT_create_arc)
     bpy.utils.unregister_class(OBJECT_OT_align_collection)

@@ -777,6 +777,43 @@ class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
         return {"FINISHED"}
 
 
+# Hide Bezier Collection operator
+class OBJECT_OT_hide_bezier_collection(bpy.types.Operator):
+    """Hide all objects in the 'beziers' collection"""
+
+    bl_idname = "object.hide_bezier_collection"
+    bl_label = "Hide Bezier Collection"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        hidden_count = 0
+
+        # Find the "beziers" collection
+        bezier_collection = None
+        for collection in bpy.data.collections:
+            if collection.name.lower() == "beziers":
+                bezier_collection = collection
+                break
+        
+        if bezier_collection:
+            # Hide all objects in the bezier collection
+            for obj in bezier_collection.objects:
+                obj.hide_viewport = True
+                hidden_count += 1
+            
+            self.report(
+                {"INFO"},
+                f"Hidden {hidden_count} objects from 'beziers' collection"
+            )
+        else:
+            self.report(
+                {"WARNING"},
+                "Collection 'beziers' not found"
+            )
+            
+        return {"FINISHED"}
+
+
 # Fade Out operator
 class OBJECT_OT_fade_out(bpy.types.Operator):
     """Fade out selected objects"""
@@ -858,6 +895,11 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             text="Arc and Follow",
             icon="FORCE_CURVE",
         )
+        box.operator(
+            OBJECT_OT_hide_bezier_collection.bl_idname,
+            text="Hide Bezier Curves",
+            icon="HIDE_ON",
+        )
 
         # Visibility tools
         box = layout.box()
@@ -909,11 +951,13 @@ def register():
     bpy.utils.register_class(OBJECT_OT_fade_in)
     bpy.utils.register_class(OBJECT_OT_fade_in_to_plane)
     bpy.utils.register_class(OBJECT_OT_fade_out)
-    # 8. Main Typst import operator that handles file selection and import
+    # 8. Hide bezier curves operator
+    bpy.utils.register_class(OBJECT_OT_hide_bezier_collection)
+    # 9. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 9. File handler for drag-and-drop support of .txt/.typ files
+    # 10. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
-    # 10. Register the sidebar panel
+    # 11. Register the sidebar panel
     bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
 
     # Add menu entries
@@ -950,6 +994,7 @@ def unregister():
     bpy.utils.unregister_class(VIEW3D_PT_typst_animation_tools)
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
+    bpy.utils.unregister_class(OBJECT_OT_hide_bezier_collection)
     bpy.utils.unregister_class(OBJECT_OT_fade_out)
     bpy.utils.unregister_class(OBJECT_OT_fade_in_to_plane)
     bpy.utils.unregister_class(OBJECT_OT_fade_in)

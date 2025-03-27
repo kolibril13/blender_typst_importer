@@ -422,9 +422,12 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         arise_obj = first_obj
         burst_obj = bpy.context.active_object
         
+        # Create a common prefix for all related objects
+        prefix = f"{first_obj.name}"
+        
         # Ensure the copy has a descriptive name
-        arise_obj.name = f"{first_obj.name}_arise"
-        burst_obj.name = f"{first_obj.name}_burst"
+        arise_obj.name = f"{prefix}_arise"
+        burst_obj.name = f"{prefix}_burst"
         
         # Get the collection of the first object
         first_obj_collection = None
@@ -439,7 +442,7 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         bpy.context.view_layer.objects.active = second_obj
         bpy.ops.object.duplicate()
         conclude_obj = bpy.context.active_object
-        conclude_obj.name = f"{second_obj.name}_conclude"
+        conclude_obj.name = f"{prefix}_conclude"
         
         # Place the destination object at z=0
         conclude_obj.location.z = 0

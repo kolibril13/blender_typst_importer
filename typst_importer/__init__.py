@@ -422,6 +422,13 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         moving_obj.name = f"{first_obj.name}_moving"
         standing_obj.name = f"{first_obj.name}_standing"
         
+        # Get the collection of the first object
+        first_obj_collection = None
+        for collection in bpy.data.collections:
+            if first_obj.name in collection.objects:
+                first_obj_collection = collection
+                break
+        
         # Create a copy of the second object at z=0
         bpy.ops.object.select_all(action='DESELECT')
         second_obj.select_set(True)
@@ -432,6 +439,15 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         
         # Place the destination object at z=0
         destination_obj.location.z = 0
+        
+        # Move the destination object to the first object's collection
+        if first_obj_collection:
+            # Remove from current collection
+            for collection in bpy.data.collections:
+                if destination_obj.name in collection.objects:
+                    collection.objects.unlink(destination_obj)
+            # Add to first object's collection
+            first_obj_collection.objects.link(destination_obj)
         
         # Create a geometry nodes modifier for the moving obj (for path following)
         moving_obj_modifier = moving_obj.modifiers.new(name="FollowPath", type="NODES")

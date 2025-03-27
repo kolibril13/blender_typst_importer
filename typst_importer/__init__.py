@@ -733,72 +733,46 @@ class OBJECT_OT_fade_out(bpy.types.Operator):
         )
         return {"FINISHED"}
 
-# Add menu entries
-def snap_xy_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_align_to_active.bl_idname,
-        text="Align Object (XY)",
-        icon="SNAP_NORMAL",
-    )
-
-
-def move_group_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_align_collection.bl_idname, text="Align Collection (XY)", icon="GROUP"
-    )
-
-
-def create_arc_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="SPHERECURVE"
-    )
-
-
-def follow_path_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH"
-    )
-
-
-def arc_and_follow_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_arc_and_follow.bl_idname, text="Arc and Follow", icon="FORCE_CURVE"
-    )
-
-
-def visibility_on_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_visibility_on.bl_idname, text="On (Visibility)", icon="HIDE_OFF"
-    )
-
-
-def visibility_off_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_visibility_off.bl_idname, text="Off (Visibility)", icon="HIDE_ON"
-    )
+# Panel for the N-panel sidebar
+class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'Typst Tools'
+    bl_label = "Animation Tools"
+    
+    def draw(self, context):
+        layout = self.layout
+        
+        # Alignment tools
+        box = layout.box()
+        box.label(text="Alignment")
+        box.operator(OBJECT_OT_align_to_active.bl_idname, text="Align Object (XY)", icon="SNAP_NORMAL")
+        box.operator(OBJECT_OT_align_collection.bl_idname, text="Align Collection (XY)", icon="GROUP")
+        
+        # Arc and path tools
+        box = layout.box()
+        box.label(text="Path Animation")
+        box.operator(OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="SPHERECURVE")
+        box.operator(OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH")
+        box.operator(OBJECT_OT_arc_and_follow.bl_idname, text="Arc and Follow", icon="FORCE_CURVE")
+        
+        # Visibility tools
+        box = layout.box()
+        box.label(text="Visibility")
+        row = box.row(align=True)
+        row.operator(OBJECT_OT_visibility_on.bl_idname, text="On", icon="HIDE_OFF")
+        row.operator(OBJECT_OT_visibility_off.bl_idname, text="Off", icon="HIDE_ON")
+        
+        # Fade tools
+        box = layout.box()
+        box.label(text="Fade Effects")
+        box.operator(OBJECT_OT_fade_in.bl_idname, text="Fade In Objects", icon="TRIA_RIGHT")
+        box.operator(OBJECT_OT_fade_in_to_plane.bl_idname, text="Fade In (To Animation Plane)", icon="TRACKING_FORWARDS")
+        box.operator(OBJECT_OT_fade_out.bl_idname, text="Fade Out Objects", icon="TRIA_LEFT")
 
 
 # Import the helper function from typst_to_svg.py
 from .typst_to_svg import typst_to_blender_curves
-
-
-# Menu functions for the new operators
-def fade_in_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_fade_in.bl_idname, text="Fade In Objects", icon="TRIA_RIGHT"
-    )
-
-
-def fade_in_to_plane_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_fade_in_to_plane.bl_idname, text="Fade In (Move to Animation Plane)", icon="TRACKING_FORWARDS"
-    )
-
-
-def fade_out_menu_func(self, context):
-    self.layout.operator(
-        OBJECT_OT_fade_out.bl_idname, text="Fade Out Objects", icon="TRIA_LEFT"
-    )
 
 
 # Operator for the button and drag-and-drop
@@ -895,27 +869,12 @@ def register():
     bpy.utils.register_class(ImportTypstOperator)
     # 9. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
+    # 10. Register the sidebar panel
+    bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
 
     # Add menu entries
     # 1. Add Typst importer to the File > Import menu
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
-    # 2. Add visibility controls to the Object menu (first)
-    bpy.types.VIEW3D_MT_object.prepend(visibility_off_menu_func)
-    bpy.types.VIEW3D_MT_object.prepend(visibility_on_menu_func)
-    # 3. Add fade controls to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(fade_out_menu_func)
-    bpy.types.VIEW3D_MT_object.prepend(fade_in_to_plane_menu_func)
-    bpy.types.VIEW3D_MT_object.prepend(fade_in_menu_func)
-    # 4. Add arc and follow to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(arc_and_follow_menu_func)
-    # 5. Add follow path to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(follow_path_menu_func)
-    # 6. Add arc creation to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(create_arc_menu_func)
-    # 7. Add XY snapping to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
-    # 8. Add group movement to the Object menu
-    bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
 
     # Set up keyboard shortcuts
     wm = bpy.context.window_manager
@@ -942,25 +901,9 @@ def unregister():
     # Remove menu entries
     # 1. Remove from File > Import menu
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
-    # 2. Remove from Object menu
-    bpy.types.VIEW3D_MT_object.remove(snap_xy_menu_func)
-    # 3. Remove group movement from Object menu
-    bpy.types.VIEW3D_MT_object.remove(move_group_menu_func)
-    # 4. Remove arc creation from Object menu
-    bpy.types.VIEW3D_MT_object.remove(create_arc_menu_func)
-    # 5. Remove arc and follow from Object menu
-    bpy.types.VIEW3D_MT_object.remove(arc_and_follow_menu_func)
-    # 6. Remove follow path from Object menu
-    bpy.types.VIEW3D_MT_object.remove(follow_path_menu_func)
-    # 7. Remove fade controls from Object menu
-    bpy.types.VIEW3D_MT_object.remove(fade_in_menu_func)
-    bpy.types.VIEW3D_MT_object.remove(fade_in_to_plane_menu_func)
-    bpy.types.VIEW3D_MT_object.remove(fade_out_menu_func)
-    # 8. Remove visibility controls from Object menu
-    bpy.types.VIEW3D_MT_object.remove(visibility_on_menu_func)
-    bpy.types.VIEW3D_MT_object.remove(visibility_off_menu_func)
 
     # Unregister Blender classes in reverse order
+    bpy.utils.unregister_class(VIEW3D_PT_typst_animation_tools)
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
     bpy.utils.unregister_class(OBJECT_OT_fade_out)

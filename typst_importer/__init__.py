@@ -95,41 +95,6 @@ def get_two_selected_objects(context, report_func=None):
     return first_obj, second_obj
 
 
-class OBJECT_OT_create_arc(bpy.types.Operator):
-    """
-    Creates an arc in the XY plane.
-
-    Usage:
-    1. Select two objects
-    2. Run the operator to create an arc between them in the XY plane
-    """
-
-    bl_idname = "object.create_arc_xy"
-    bl_label = "Create Arc (XY)"
-    bl_options = {"REGISTER", "UNDO"}
-
-    curve_height: bpy.props.FloatProperty(
-        name="Curve Height",
-        description="Adjustable Y parameter that controls the arc's curvature",
-        default=1.9,
-        min=-10.0,
-        max=10.0,
-    )
-
-    def execute(self, context):
-        first_obj, second_obj = get_two_selected_objects(context, self.report)
-        if first_obj is None:
-            return {"CANCELLED"}
-
-        first_co = first_obj.location.copy()
-        second_co = second_obj.location.copy()
-
-        curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
-        context.collection.objects.link(curve_obj)
-        context.view_layer.objects.active = curve_obj
-        curve_obj.select_set(True)
-
-        return {"FINISHED"}
 
 
 class OBJECT_OT_align_to_active(bpy.types.Operator):
@@ -238,22 +203,7 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class OBJECT_OT_arc_and_follow(bpy.types.Operator):
-    """
-    Creates an arc between two objects and sets up the first object to follow the path.
-    
-    Usage:
-    1. Select two objects
-    2. Run the operator to create an arc and make the first object follow it
-    """
-    
-    bl_idname = "object.arc_and_follow"
-    bl_label = "Arc and Follow"
-    bl_options = {"REGISTER", "UNDO"}
-    
-    def execute(self, context):
-        self.report({"INFO"}, "Hello World")
-        return {"FINISHED"}
+
 
 
 def toggle_visibility(obj, current_frame, make_visible):
@@ -296,6 +246,41 @@ def toggle_visibility(obj, current_frame, make_visible):
     return visibility_modifier
 
 
+class OBJECT_OT_create_arc(bpy.types.Operator):
+    """
+    Creates an arc in the XY plane.
+
+    Usage:
+    1. Select two objects
+    2. Run the operator to create an arc between them in the XY plane
+    """
+
+    bl_idname = "object.create_arc_xy"
+    bl_label = "Create Arc (XY)"
+    bl_options = {"REGISTER", "UNDO"}
+
+    curve_height: bpy.props.FloatProperty(
+        name="Curve Height",
+        description="Adjustable Y parameter that controls the arc's curvature",
+        default=1.9,
+        min=-10.0,
+        max=10.0,
+    )
+
+    def execute(self, context):
+        first_obj, second_obj = get_two_selected_objects(context, self.report)
+        if first_obj is None:
+            return {"CANCELLED"}
+
+        first_co = first_obj.location.copy()
+        second_co = second_obj.location.copy()
+
+        curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
+        context.collection.objects.link(curve_obj)
+        context.view_layer.objects.active = curve_obj
+        curve_obj.select_set(True)
+
+        return {"FINISHED"}
 
 class OBJECT_OT_follow_path(bpy.types.Operator):
     """
@@ -387,6 +372,100 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         return {"FINISHED"}
 
 
+
+
+
+class OBJECT_OT_arc_and_follow(bpy.types.Operator):
+    """
+    Creates an arc between two objects and sets up the first object to follow the path.
+    
+    Usage:
+    1. Select two objects
+    2. Run the operator to create an arc and make the first object follow it
+    """
+    
+    bl_idname = "object.arc_and_follow"
+    bl_label = "Arc and Follow"
+    bl_options = {"REGISTER", "UNDO"}
+    
+    curve_height: bpy.props.FloatProperty(
+        name="Curve Height",
+        description="Adjustable Y parameter that controls the arc's curvature",
+        default=1.9,
+        min=-10.0,
+        max=10.0,
+    )
+    
+    def execute(self, context):
+        # Step 1: Get the two selected objects
+        first_obj, second_obj = get_two_selected_objects(context, self.report)
+        if first_obj is None:
+            return {"CANCELLED"}
+            
+        # Step 2: Create an arc between them
+        first_co = first_obj.location.copy()
+        second_co = second_obj.location.copy()
+        
+        curve_obj = create_bezier_curve(first_co, second_co, self.curve_height)
+        context.collection.objects.link(curve_obj)
+        
+        # Step 3: Set up the first object to follow the path
+        # Create a copy of the first object
+        bpy.ops.object.select_all(action='DESELECT')
+        first_obj.select_set(True)
+        bpy.context.view_layer.objects.active = first_obj
+        bpy.ops.object.duplicate()
+        moving_obj = bpy.context.active_object
+        standing_obj = first_obj
+        
+        # Ensure the copy has a descriptive name
+        moving_obj.name = f"{first_obj.name}_moving"
+        standing_obj.name = f"{first_obj.name}_standing"
+        
+        
+        # Create a geometry nodes modifier for the moving obj (for path following)
+        moving_obj_modifier = moving_obj.modifiers.new(name="FollowPath", type="NODES")
+        
+        # Always create a new geometry nodes group to avoid conflicts
+        geometry_nodes = create_follow_curve_node_group()
+        
+        # Assign the node group to the modifier
+        moving_obj_modifier.node_group = geometry_nodes
+        
+        # Set the curve obj as the target
+        moving_obj_modifier["Socket_2"] = curve_obj
+        
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        
+        # Clear any existing keyframes for this property
+        if moving_obj.animation_data and moving_obj.animation_data.action:
+            fcurves = moving_obj.animation_data.action.fcurves
+            for fc in fcurves:
+                if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
+                    moving_obj.animation_data.action.fcurves.remove(fc)
+                    break
+        
+        # Add keyframe at current frame with factor 0.0
+        moving_obj_modifier["Socket_3"] = 0.0
+        moving_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=current_frame)
+        
+        # Add keyframe 10 frames later with factor 1.0
+        next_frame = current_frame + 10
+        moving_obj_modifier["Socket_3"] = 1.0
+        moving_obj.keyframe_insert('modifiers["FollowPath"]["Socket_3"]', frame=next_frame)
+        
+        # Reset to initial value for display
+        moving_obj_modifier["Socket_3"] = 0.0
+        
+        # Step 4: Toggle visibility of the standing object
+        toggle_visibility(standing_obj, current_frame, make_visible=False)
+        
+        self.report(
+            {"INFO"},
+            f"Created arc and set up {moving_obj.name} to follow it. {standing_obj.name} will be hidden."
+        )
+        return {"FINISHED"}
 
 class OBJECT_OT_visibility_on(bpy.types.Operator):
     """

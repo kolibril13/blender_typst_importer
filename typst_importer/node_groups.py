@@ -100,19 +100,27 @@ def create_follow_curve_node_group():
     reroute = follow_path.nodes.new("NodeReroute")
     reroute.name = "Reroute"
     reroute.socket_idname = "NodeSocketFloatFactor"
+    
+    # Add Set Position node to slightly adjust Z position
+    set_position = follow_path.nodes.new("GeometryNodeSetPosition")
+    set_position.name = "Set Position"
+    set_position.inputs[1].default_value = True  # Selection
+    set_position.inputs[2].default_value = (0.0, 0.0, 0.0)  # Position
+    set_position.inputs[3].default_value = (0.0, 0.0, 0.05)  # Offset
 
     # Set node locations
-    group_input.location = (-380.0, 60.0)
-    group_output.location = (460.0, 180.0)
-    object_info.location = (-180.0, 0.0)
-    sample_curve.location = (-20.0, 0.0)
-    transform_geometry.location = (140.0, 100.0)
-    reroute_001.location = (-180.0, -240.0)
-    switch.location = (300.0, 200.0)
-    compare.location = (-180.0, 360.0)
-    compare_001.location = (-180.0, 200.0)
-    boolean_math.location = (20.0, 340.0)
-    reroute.location = (-220.0, 180.0)
+    group_input.location = (-467.30731201171875, 60.86485290527344)
+    group_output.location = (540.0, 180.0)
+    object_info.location = (-267.30731201171875, 0.8648511171340942)
+    sample_curve.location = (-107.30732727050781, 0.8648511171340942)
+    transform_geometry.location = (52.69267272949219, 100.86485290527344)
+    reroute_001.location = (-267.30731201171875, -239.13514709472656)
+    switch.location = (212.6926727294922, 200.86485290527344)
+    compare.location = (-267.30731201171875, 360.8648376464844)
+    compare_001.location = (-267.30731201171875, 200.86485290527344)
+    boolean_math.location = (-67.30732727050781, 340.8648376464844)
+    reroute.location = (-307.30731201171875, 180.86485290527344)
+    set_position.location = (380.0, 200.0)
 
     # Set node dimensions
     group_input.width, group_input.height = 140.0, 100.0
@@ -126,6 +134,7 @@ def create_follow_curve_node_group():
     compare_001.width, compare_001.height = 140.0, 100.0
     boolean_math.width, boolean_math.height = 140.0, 100.0
     reroute.width, reroute.height = 20.0, 100.0
+    set_position.width, set_position.height = 140.0, 100.0
 
     # Create links
     links = follow_path.links
@@ -139,8 +148,8 @@ def create_follow_curve_node_group():
         group_input.outputs[0], transform_geometry.inputs[0]
     )  # Group Input.Geometry -> Transform Geometry.Geometry
     links.new(
-        switch.outputs[0], group_output.inputs[0]
-    )  # Switch.Output -> Group Output.Geometry
+        set_position.outputs[0], group_output.inputs[0]
+    )  # Set Position.Geometry -> Group Output.Geometry
     links.new(
         reroute_001.outputs[0], sample_curve.inputs[2]
     )  # Reroute.001.Output -> Sample Curve.Factor
@@ -171,7 +180,9 @@ def create_follow_curve_node_group():
     links.new(
         group_input.outputs[2], reroute.inputs[0]
     )  # Group Input.Factor -> Reroute.Input
-
+    links.new(
+        switch.outputs[0], set_position.inputs[0]
+    )  # Switch.Output -> Set Position.Geometry
 
     return follow_path
 

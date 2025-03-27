@@ -607,6 +607,86 @@ class OBJECT_OT_fade_in(bpy.types.Operator):
         )
         return {"FINISHED"}
 
+# Fade In and Move to Animation Plane operator
+class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
+    """Fade in selected objects and move copies to the animation plane (first collection)"""
+
+    bl_idname = "object.fade_in_to_plane"
+    bl_label = "Fade In (Move to Animation Plane)"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects
+
+    def execute(self, context):
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        end_frame = current_frame + 10
+        
+        # Get the first collection in the scene
+        target_collection = None
+        if bpy.data.collections:
+            target_collection = bpy.data.collections[0]
+        
+        if not target_collection:
+            self.report({"WARNING"}, "No collections found in the scene")
+            return {"CANCELLED"}
+        
+        created_objects = []
+        
+        for obj in context.selected_objects:
+            # Create a copy of the object
+            bpy.ops.object.select_all(action="DESELECT")
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            bpy.ops.object.duplicate()
+            
+            # Get the newly created copy
+            copy_obj = context.active_object
+            copy_obj.name = f"{obj.name}_animation"
+            
+            # Move the copy to the first collection
+            # First remove from current collections
+            for collection in bpy.data.collections:
+                if copy_obj.name in collection.objects:
+                    collection.objects.unlink(copy_obj)
+            
+            # Add to target collection
+            target_collection.objects.link(copy_obj)
+            
+            # Make the object visible
+            toggle_visibility(copy_obj, current_frame, True)
+            
+            # Ensure the opacity property exists
+            if "opacity" not in copy_obj:
+                copy_obj["opacity"] = 0.0
+            
+            # Set initial opacity to 0
+            copy_obj["opacity"] = 0.0
+            copy_obj.keyframe_insert(data_path='["opacity"]', frame=current_frame)
+            
+            # Set final opacity to 1
+            copy_obj["opacity"] = 1.0
+            copy_obj.keyframe_insert(data_path='["opacity"]', frame=end_frame)
+            
+            # Reset to initial value for display
+            copy_obj["opacity"] = 0.0
+            
+            created_objects.append(copy_obj.name)
+        
+        # Select all the newly created objects
+        bpy.ops.object.select_all(action="DESELECT")
+        for obj_name in created_objects:
+            if obj_name in bpy.data.objects:
+                bpy.data.objects[obj_name].select_set(True)
+        
+        self.report(
+            {"INFO"},
+            f"Created and fading in {len(created_objects)} objects in collection '{target_collection.name}'"
+        )
+        return {"FINISHED"}
+
 
 # Fade Out operator
 class OBJECT_OT_fade_out(bpy.types.Operator):
@@ -706,6 +786,12 @@ def fade_in_menu_func(self, context):
     )
 
 
+def fade_in_to_plane_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_fade_in_to_plane.bl_idname, text="Fade In (Move to Animation Plane)", icon="TRACKING_FORWARDS"
+    )
+
+
 def fade_out_menu_func(self, context):
     self.layout.operator(
         OBJECT_OT_fade_out.bl_idname, text="Fade Out Objects", icon="TRIA_LEFT"
@@ -800,6 +886,7 @@ def register():
     bpy.utils.register_class(OBJECT_OT_visibility_off)
     # 7. Fade operators
     bpy.utils.register_class(OBJECT_OT_fade_in)
+    bpy.utils.register_class(OBJECT_OT_fade_in_to_plane)
     bpy.utils.register_class(OBJECT_OT_fade_out)
     # 8. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
@@ -814,6 +901,7 @@ def register():
     bpy.types.VIEW3D_MT_object.prepend(visibility_on_menu_func)
     # 3. Add fade controls to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(fade_out_menu_func)
+    bpy.types.VIEW3D_MT_object.prepend(fade_in_to_plane_menu_func)
     bpy.types.VIEW3D_MT_object.prepend(fade_in_menu_func)
     # 4. Add arc and follow to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(arc_and_follow_menu_func)
@@ -863,6 +951,7 @@ def unregister():
     bpy.types.VIEW3D_MT_object.remove(follow_path_menu_func)
     # 7. Remove fade controls from Object menu
     bpy.types.VIEW3D_MT_object.remove(fade_in_menu_func)
+    bpy.types.VIEW3D_MT_object.remove(fade_in_to_plane_menu_func)
     bpy.types.VIEW3D_MT_object.remove(fade_out_menu_func)
     # 8. Remove visibility controls from Object menu
     bpy.types.VIEW3D_MT_object.remove(visibility_on_menu_func)
@@ -872,6 +961,7 @@ def unregister():
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
     bpy.utils.unregister_class(OBJECT_OT_fade_out)
+    bpy.utils.unregister_class(OBJECT_OT_fade_in_to_plane)
     bpy.utils.unregister_class(OBJECT_OT_fade_in)
     bpy.utils.unregister_class(OBJECT_OT_visibility_off)
     bpy.utils.unregister_class(OBJECT_OT_visibility_on)

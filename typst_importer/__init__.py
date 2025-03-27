@@ -422,6 +422,16 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         moving_obj.name = f"{first_obj.name}_moving"
         standing_obj.name = f"{first_obj.name}_standing"
         
+        # Create a copy of the second object at z=0
+        bpy.ops.object.select_all(action='DESELECT')
+        second_obj.select_set(True)
+        bpy.context.view_layer.objects.active = second_obj
+        bpy.ops.object.duplicate()
+        destination_obj = bpy.context.active_object
+        destination_obj.name = f"{second_obj.name}_destination"
+        
+        # Place the destination object at z=0
+        destination_obj.location.z = 0
         
         # Create a geometry nodes modifier for the moving obj (for path following)
         moving_obj_modifier = moving_obj.modifiers.new(name="FollowPath", type="NODES")
@@ -461,12 +471,16 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         # Step 4: Toggle visibility of the standing object
         toggle_visibility(standing_obj, current_frame, make_visible=False)
         
+        # Step 5: Set up visibility for the destination object
+        
+        # Make the destination object visible at the end of the animation
+        toggle_visibility(destination_obj, next_frame-1, make_visible=True)
+        
         self.report(
             {"INFO"},
-            f"Created arc and set up {moving_obj.name} to follow it. {standing_obj.name} will be hidden."
+            f"Created arc and set up {moving_obj.name} to follow it. {standing_obj.name} will be hidden. {destination_obj.name} will appear at the end."
         )
         return {"FINISHED"}
-
 class OBJECT_OT_visibility_on(bpy.types.Operator):
     """
     Turn on visibility for selected objects

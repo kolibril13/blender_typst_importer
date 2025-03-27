@@ -646,6 +646,9 @@ class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
             copy_obj = context.active_object
             copy_obj.name = f"{obj.name}_animation"
             
+            # Set z coordinate to 0
+            copy_obj.location.z = 0
+            
             # Move the copy to the first collection
             # First remove from current collections
             for collection in bpy.data.collections:

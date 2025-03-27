@@ -573,8 +573,38 @@ class OBJECT_OT_fade_in(bpy.types.Operator):
     bl_label = "Fade In Objects"
     bl_options = {"REGISTER", "UNDO"}
 
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects
+
     def execute(self, context):
-        self.report({"INFO"}, "Hello World from Fade In Operator")
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        end_frame = current_frame + 10
+        
+        for obj in context.selected_objects:
+            # First make the object visible
+            toggle_visibility(obj, current_frame, True)  # Then turn visiblity on
+            
+            # Ensure the opacity property exists
+            if "opacity" not in obj:
+                obj["opacity"] = 0.0
+            
+            # Set initial opacity to 0
+            obj["opacity"] = 0.0
+            obj.keyframe_insert(data_path='["opacity"]', frame=current_frame)
+            
+            # Set final opacity to 1
+            obj["opacity"] = 1.0
+            obj.keyframe_insert(data_path='["opacity"]', frame=end_frame)
+            
+            # Reset to initial value for display
+            obj["opacity"] = 0.0
+        
+        self.report(
+            {"INFO"},
+            f"Fading in {len(context.selected_objects)} objects over 10 frames"
+        )
         return {"FINISHED"}
 
 

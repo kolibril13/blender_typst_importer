@@ -340,6 +340,90 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class OBJECT_OT_visibility_on(bpy.types.Operator):
+    """
+    Turn on visibility for selected objects
+    """
+    bl_idname = "object.visibility_on"
+    bl_label = "On (Visibility)"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects
+
+    def execute(self, context):
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        
+        for obj in context.selected_objects:
+            # Check if the object already has a visibility modifier
+            visibility_modifier = None
+            for modifier in obj.modifiers:
+                if modifier.type == "NODES" and modifier.name == "Visibility":
+                    visibility_modifier = modifier
+                    break
+            
+            # If no visibility modifier exists, add one
+            if not visibility_modifier:
+                visibility_modifier = obj.modifiers.new(name="Visibility", type="NODES")
+                visibility_modifier.node_group = visibility_node_group()
+            
+            
+            # Set visibility to False at current frame
+            visibility_modifier["Socket_2"] = False
+            obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
+            
+            # Set visibility to True at next frame to make it visible
+            visibility_modifier["Socket_2"] = True
+            obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
+        
+        self.report({"INFO"}, f"Turned on visibility for {len(context.selected_objects)} objects")
+        return {"FINISHED"}
+
+
+class OBJECT_OT_visibility_off(bpy.types.Operator):
+    """
+    Turn off visibility for selected objects
+    """
+    bl_idname = "object.visibility_off"
+    bl_label = "Off (Visibility)"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return context.selected_objects
+
+    def execute(self, context):
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        
+        for obj in context.selected_objects:
+            # Check if the object already has a visibility modifier
+            visibility_modifier = None
+            for modifier in obj.modifiers:
+                if modifier.type == "NODES" and modifier.name == "Visibility":
+                    visibility_modifier = modifier
+                    break
+            
+            # If no visibility modifier exists, add one
+            if not visibility_modifier:
+                visibility_modifier = obj.modifiers.new(name="Visibility", type="NODES")
+                visibility_modifier.node_group = visibility_node_group()
+            
+
+            
+            # Set visibility to True at current frame
+            visibility_modifier["Socket_2"] = True
+            obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
+            
+            # Make object invisible at the next frame
+            visibility_modifier["Socket_2"] = False
+            obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame+1)
+        
+        self.report({"INFO"}, f"Turned off visibility for {len(context.selected_objects)} objects")
+        return {"FINISHED"}
+
 # Add menu entries
 def snap_xy_menu_func(self, context):
     self.layout.operator(
@@ -364,6 +448,18 @@ def create_arc_menu_func(self, context):
 def follow_path_menu_func(self, context):
     self.layout.operator(
         OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH"
+    )
+
+
+def visibility_on_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_visibility_on.bl_idname, text="On (Visibility)", icon="HIDE_OFF"
+    )
+
+
+def visibility_off_menu_func(self, context):
+    self.layout.operator(
+        OBJECT_OT_visibility_off.bl_idname, text="Off (Visibility)", icon="HIDE_ON"
     )
 
 
@@ -452,21 +548,27 @@ def register():
     bpy.utils.register_class(OBJECT_OT_create_arc)
     # 4. Follow path operator
     bpy.utils.register_class(OBJECT_OT_follow_path)
-    # 5. Main Typst import operator that handles file selection and import
+    # 5. Visibility operators
+    bpy.utils.register_class(OBJECT_OT_visibility_on)
+    bpy.utils.register_class(OBJECT_OT_visibility_off)
+    # 6. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 6. File handler for drag-and-drop support of .txt/.typ files
+    # 7. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
 
     # Add menu entries
     # 1. Add Typst importer to the File > Import menu
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
-    # 2. Add follow path to the Object menu (first)
+    # 2. Add visibility controls to the Object menu (first)
+    bpy.types.VIEW3D_MT_object.prepend(visibility_off_menu_func)
+    bpy.types.VIEW3D_MT_object.prepend(visibility_on_menu_func)
+    # 3. Add follow path to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(follow_path_menu_func)
-    # 3. Add arc creation to the Object menu
+    # 4. Add arc creation to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(create_arc_menu_func)
-    # 4. Add XY snapping to the Object menu
+    # 5. Add XY snapping to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(snap_xy_menu_func)
-    # 5. Add group movement to the Object menu
+    # 6. Add group movement to the Object menu
     bpy.types.VIEW3D_MT_object.prepend(move_group_menu_func)
 
     # Set up keyboard shortcuts
@@ -502,10 +604,15 @@ def unregister():
     bpy.types.VIEW3D_MT_object.remove(create_arc_menu_func)
     # 5. Remove follow path from Object menu
     bpy.types.VIEW3D_MT_object.remove(follow_path_menu_func)
+    # 6. Remove visibility controls from Object menu
+    bpy.types.VIEW3D_MT_object.remove(visibility_on_menu_func)
+    bpy.types.VIEW3D_MT_object.remove(visibility_off_menu_func)
 
     # Unregister Blender classes in reverse order
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
+    bpy.utils.unregister_class(OBJECT_OT_visibility_off)
+    bpy.utils.unregister_class(OBJECT_OT_visibility_on)
     bpy.utils.unregister_class(OBJECT_OT_follow_path)
     bpy.utils.unregister_class(OBJECT_OT_create_arc)
     bpy.utils.unregister_class(OBJECT_OT_align_collection)

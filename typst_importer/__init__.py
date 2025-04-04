@@ -105,48 +105,33 @@ def register():
     # Add the current module to Python's path to ensure imports work correctly
     add_current_module_to_path()
 
-    # Register Blender classes (operators and file handler)
-    # 1. XY snapping operator for aligning objects
+    # Register Blender classes
     bpy.utils.register_class(OBJECT_OT_align_to_active)
-    # 2. Group movement operator
     bpy.utils.register_class(OBJECT_OT_align_collection)
-    # 3. Arc creation operator
     bpy.utils.register_class(OBJECT_OT_create_arc)
-    # 4. Arc and Follow operator
     bpy.utils.register_class(OBJECT_OT_arc_and_follow)
-    # 5. Follow path operator
     bpy.utils.register_class(OBJECT_OT_follow_path)
-    # 6. Visibility operators
     bpy.utils.register_class(OBJECT_OT_visibility_on)
     bpy.utils.register_class(OBJECT_OT_visibility_off)
-    # 7. Fade operators
     bpy.utils.register_class(OBJECT_OT_fade_in)
     bpy.utils.register_class(OBJECT_OT_fade_in_to_plane)
     bpy.utils.register_class(OBJECT_OT_fade_out)
-    # 8. Hide bezier curves operator
     bpy.utils.register_class(OBJECT_OT_hide_bezier_collection)
-    # 9. Hello World operator
     bpy.utils.register_class(OBJECT_OT_hello_world)
-    # 10. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 11. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
-    # 12. Register the sidebar panel
     bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
 
     # Add menu entries
-    # 1. Add Typst importer to the File > Import menu
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
 
     # Set up keyboard shortcuts
     wm = bpy.context.window_manager
     km = wm.keyconfigs.addon.keymaps.new(name="Object Mode", space_type="EMPTY")
-    # Bind the 'J' key to trigger the XY snap operator
     kmi = km.keymap_items.new(
         OBJECT_OT_align_to_active.bl_idname, type="J", value="PRESS"
     )
     addon_keymaps.append((km, kmi))
-    # Bind the 'L' key to trigger the group movement operator
     kmi = km.keymap_items.new(
         OBJECT_OT_align_collection.bl_idname, type="L", value="PRESS"
     )

@@ -197,6 +197,7 @@ class OBJECT_OT_align_to_active(bpy.types.Operator):
                 obj.location.y = target_loc.y
         return {"FINISHED"}
 
+
 class OBJECT_OT_align_collection(bpy.types.Operator):
     """
     Aligns multiple collections of objects by moving them based on the active object's location.
@@ -231,43 +232,42 @@ class OBJECT_OT_align_collection(bpy.types.Operator):
 
         # The active object is the destination
         destination = context.active_object
-        
+
         # All other selected objects are sources
         source_objects = [obj for obj in context.selected_objects if obj != destination]
-        
+
         # For each source object, move its entire collection
         for source in source_objects:
             # Compute the translation vector from source to destination
             delta = destination.location - source.location
-            
+
             # Gather all objects in every collection that the source object is a member of,
             # including objects in sub-collections
             objects_to_move = set()
-            
+
             def gather_objects_from_collection(collection):
                 # Add objects directly in this collection
                 objects_to_move.update(collection.objects)
                 # Recursively process sub-collections
                 for child_collection in collection.children:
                     gather_objects_from_collection(child_collection)
-            
+
             if source.users_collection:
                 for coll in source.users_collection:
                     gather_objects_from_collection(coll)
             else:
                 # In case the source isn't in any collection (rare), move just the source
                 objects_to_move.add(source)
-            
+
             # Move each object by delta only in the X and Y axes, except for the destination
             for obj in objects_to_move:
                 if obj == destination or obj in source_objects and obj != source:
                     continue
                 obj.location.x += delta.x
                 obj.location.y += delta.y
-        
+
         self.report(
-            {"INFO"},
-            f"Aligned {len(source_objects)} collections to {destination.name}"
+            {"INFO"}, f"Aligned {len(source_objects)} collections to {destination.name}"
         )
         return {"FINISHED"}
 
@@ -797,23 +797,32 @@ class OBJECT_OT_hide_bezier_collection(bpy.types.Operator):
             if collection.name.lower() == "beziers":
                 bezier_collection = collection
                 break
-        
+
         if bezier_collection:
             # Hide all objects in the bezier collection
             for obj in bezier_collection.objects:
                 obj.hide_viewport = True
                 hidden_count += 1
-            
+
             self.report(
-                {"INFO"},
-                f"Hidden {hidden_count} objects from 'beziers' collection"
+                {"INFO"}, f"Hidden {hidden_count} objects from 'beziers' collection"
             )
         else:
-            self.report(
-                {"WARNING"},
-                "Collection 'beziers' not found"
-            )
-            
+            self.report({"WARNING"}, "Collection 'beziers' not found")
+
+        return {"FINISHED"}
+
+
+# Hello World operator
+class OBJECT_OT_hello_world(bpy.types.Operator):
+    """Simple operator that prints Hello World"""
+
+    bl_idname = "object.hello_world"
+    bl_label = "Hello World"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        self.report({"INFO"}, "Hello World!")
         return {"FINISHED"}
 
 
@@ -903,6 +912,11 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             text="Hide Bezier Curves",
             icon="HIDE_ON",
         )
+        box.operator(
+            OBJECT_OT_hello_world.bl_idname,
+            text="Hello World",
+            icon="INFO",
+        )
 
         # Visibility tools
         box = layout.box()
@@ -956,11 +970,13 @@ def register():
     bpy.utils.register_class(OBJECT_OT_fade_out)
     # 8. Hide bezier curves operator
     bpy.utils.register_class(OBJECT_OT_hide_bezier_collection)
-    # 9. Main Typst import operator that handles file selection and import
+    # 9. Hello World operator
+    bpy.utils.register_class(OBJECT_OT_hello_world)
+    # 10. Main Typst import operator that handles file selection and import
     bpy.utils.register_class(ImportTypstOperator)
-    # 10. File handler for drag-and-drop support of .txt/.typ files
+    # 11. File handler for drag-and-drop support of .txt/.typ files
     bpy.utils.register_class(TXT_FH_import)
-    # 11. Register the sidebar panel
+    # 12. Register the sidebar panel
     bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
 
     # Add menu entries
@@ -997,6 +1013,7 @@ def unregister():
     bpy.utils.unregister_class(VIEW3D_PT_typst_animation_tools)
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
+    bpy.utils.unregister_class(OBJECT_OT_hello_world)
     bpy.utils.unregister_class(OBJECT_OT_hide_bezier_collection)
     bpy.utils.unregister_class(OBJECT_OT_fade_out)
     bpy.utils.unregister_class(OBJECT_OT_fade_in_to_plane)

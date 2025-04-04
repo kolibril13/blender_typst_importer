@@ -96,11 +96,14 @@ for i in range(0,10):
 # Changelog
 
 
-## v0.1.10
-- try new publishing workflow
 
+## v0.1.12
 
-## v0.1.9
+- Import every new curve as "n" instead of "Curve"
+- new interface for animation
+- Possible to align multiple collections at once.
+
+## v0.1.9,  v0.1.10, v0.1.11
 
 - try new publishing workflow
 

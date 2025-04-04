@@ -358,6 +358,9 @@ def typst_to_blender_curves(
 
     # Setup objects and materials
     for obj in imported_collection.objects:
+        # Rename curve objects from "Curve" to "n"
+        if obj.name.startswith("Curve"):
+            obj.name = "n" + obj.name[5:]
         setup_object(obj, scale_factor)
 
     deduplicate_materials(imported_collection)

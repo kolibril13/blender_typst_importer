@@ -96,6 +96,10 @@ for i in range(0,10):
 # Changelog
 
 
+## v0.1.10
+- try new publishing workflow
+
+
 ## v0.1.9
 
 - try new publishing workflow

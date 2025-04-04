@@ -11,6 +11,8 @@ jobs:
       contents: read
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: Download Release Assets and Notes
         run: |
           mkdir assets
@@ -21,8 +23,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload to Extensions Platform
-        env: 
-            EXTENSION: typst_importer
+        env:
+          EXTENSION: typst_importer
         run: |
           # Find all zip files in the assets directory
           for zipfile in assets/*.zip; do

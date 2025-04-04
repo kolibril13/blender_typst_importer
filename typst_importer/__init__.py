@@ -18,6 +18,7 @@ from .operators import (
     OBJECT_OT_fade_in_to_plane,
     OBJECT_OT_fade_out,
     OBJECT_OT_hello_world,
+    OBJECT_OT_copy_without_keyframes,
 )
 
 # Global list to store our keymap entries for cleanup.
@@ -94,6 +95,11 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
         box.operator(
             OBJECT_OT_fade_out.bl_idname, text="Fade Out Objects", icon="TRIA_LEFT"
         )
+        box.operator(
+            OBJECT_OT_copy_without_keyframes.bl_idname,
+            text="Copy Without Keyframes",
+            icon="DUPLICATE",
+        )
 
 
 def menu_func_import(self, context):
@@ -118,6 +124,7 @@ def register():
     bpy.utils.register_class(OBJECT_OT_fade_out)
     bpy.utils.register_class(OBJECT_OT_hide_bezier_collection)
     bpy.utils.register_class(OBJECT_OT_hello_world)
+    bpy.utils.register_class(OBJECT_OT_copy_without_keyframes)
     bpy.utils.register_class(ImportTypstOperator)
     bpy.utils.register_class(TXT_FH_import)
     bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
@@ -155,6 +162,7 @@ def unregister():
     bpy.utils.unregister_class(ImportTypstOperator)
     bpy.utils.unregister_class(OBJECT_OT_hello_world)
     bpy.utils.unregister_class(OBJECT_OT_hide_bezier_collection)
+    bpy.utils.unregister_class(OBJECT_OT_copy_without_keyframes)
     bpy.utils.unregister_class(OBJECT_OT_fade_out)
     bpy.utils.unregister_class(OBJECT_OT_fade_in_to_plane)
     bpy.utils.unregister_class(OBJECT_OT_fade_in)

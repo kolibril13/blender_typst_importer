@@ -96,6 +96,10 @@ for i in range(0,10):
 # Changelog
 
 
+## v0.1.9
+
+- try new publishing workflow
+
 ## v0.1.8
 - rename "my_opacity" to "opacity"
 - Use an emission shader instead of principled bsdf, so that the text is not effected by scene light:

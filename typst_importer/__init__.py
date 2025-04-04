@@ -17,7 +17,6 @@ from .operators import (
     OBJECT_OT_fade_in,
     OBJECT_OT_fade_in_to_plane,
     OBJECT_OT_fade_out,
-    OBJECT_OT_hello_world,
     OBJECT_OT_copy_without_keyframes,
 )
 
@@ -68,11 +67,7 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             text="Hide Bezier Curves",
             icon="HIDE_ON",
         )
-        box.operator(
-            OBJECT_OT_hello_world.bl_idname,
-            text="Hello World",
-            icon="INFO",
-        )
+
 
         # Visibility tools
         box = layout.box()
@@ -123,7 +118,6 @@ def register():
     bpy.utils.register_class(OBJECT_OT_fade_in_to_plane)
     bpy.utils.register_class(OBJECT_OT_fade_out)
     bpy.utils.register_class(OBJECT_OT_hide_bezier_collection)
-    bpy.utils.register_class(OBJECT_OT_hello_world)
     bpy.utils.register_class(OBJECT_OT_copy_without_keyframes)
     bpy.utils.register_class(ImportTypstOperator)
     bpy.utils.register_class(TXT_FH_import)
@@ -160,7 +154,6 @@ def unregister():
     bpy.utils.unregister_class(VIEW3D_PT_typst_animation_tools)
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
-    bpy.utils.unregister_class(OBJECT_OT_hello_world)
     bpy.utils.unregister_class(OBJECT_OT_hide_bezier_collection)
     bpy.utils.unregister_class(OBJECT_OT_copy_without_keyframes)
     bpy.utils.unregister_class(OBJECT_OT_fade_out)

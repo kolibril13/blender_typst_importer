@@ -28,6 +28,5 @@ from .fade import (
 )
 
 from .utility import (
-    OBJECT_OT_hello_world,
     OBJECT_OT_copy_without_keyframes,
 )

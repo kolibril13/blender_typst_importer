@@ -401,7 +401,7 @@ def typst_express(
     scale_factor: float = 100.0,
     origin_to_char: bool = False,
     join_curves: bool = False,
-    convert_to_mesh: bool = False,
+    convert_to_mesh: bool = True,
     position: Optional[Tuple[float, float, float]] = None,
     show_indices: bool = False,
 ) -> bpy.types.Collection:
@@ -416,7 +416,7 @@ def typst_express(
         scale_factor (float, optional): Scale factor for the imported curves. Defaults to 100.0.
         origin_to_char (bool, optional): If True, set the origin of each object to its geometry. Defaults to False.
         join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
-        convert_to_mesh (bool, optional): If True, convert curves to meshes. Defaults to False.
+        convert_to_mesh (bool, optional): If True, convert curves to meshes. Defaults to True.
         position (Optional[Tuple[float, float, float]], optional): Position (x,y,z) to place the content. Defaults to None.
         show_indices (bool, optional): If True, add blue text indices with background circles to each object. Defaults to False.
 

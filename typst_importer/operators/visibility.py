@@ -38,7 +38,6 @@ def toggle_visibility(obj, current_frame, make_visible):
 
     # Reset to initial state for display
     visibility_modifier["Socket_2"] = initial_state
-
     return visibility_modifier
 
 
@@ -66,6 +65,9 @@ class OBJECT_OT_visibility_on(bpy.types.Operator):
             {"INFO"},
             f"Turned on visibility for {len(context.selected_objects)} objects",
         )
+
+        # Step one frame forward in the timeline
+        context.scene.frame_set(current_frame + 1)
         return {"FINISHED"}
 
 
@@ -93,7 +95,10 @@ class OBJECT_OT_visibility_off(bpy.types.Operator):
             {"INFO"},
             f"Turned off visibility for {len(context.selected_objects)} objects",
         )
-        return {"FINISHED"} 
+
+        # Step one frame forward in the timeline
+        context.scene.frame_set(current_frame + 1)
+        return {"FINISHED"}
 
 
 class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
@@ -103,7 +108,7 @@ class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
 
     bl_idname = "object.join_on_objects_off"
     bl_label = "Join: Objects -> Joined"
-    bl_options ={"REGISTER", "UNDO"}
+    bl_options = {"REGISTER", "UNDO"}
 
     @classmethod
     def poll(cls, context):
@@ -112,43 +117,46 @@ class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
     def execute(self, context):
         # Get the current frame
         current_frame = context.scene.frame_current
-        
+
         # Store selected objects
         selected_objects = list(context.selected_objects)
-        
+
         # Create a copy of the selected objects before joining
         original_objects = selected_objects.copy()
-        
+
         # Join all selected objects
         if len(selected_objects) > 1:
             # Duplicate the objects first
             bpy.ops.object.duplicate()
             # Get the duplicated objects
             duplicated_objects = context.selected_objects
-            
+
             # Set the active object (target for joining)
             context.view_layer.objects.active = duplicated_objects[0]
-            
+
             # Join objects
             bpy.ops.object.join()
-            
+
             # The joined object is now the active object
             joined_object = context.active_object
             # Rename the joined object
             joined_object.name = "Joined_Group"
             joined_object.select_set(True)
-            
+
             # Make the joined object visible
             toggle_visibility(joined_object, current_frame, True)
-            
+
             # Make the original objects invisible
             for obj in original_objects:
                 toggle_visibility(obj, current_frame, False)
-            
+
             self.report(
                 {"INFO"},
                 f"Created group and toggled visibility for {len(original_objects)} objects",
             )
+
+            # Step one frame forward in the timeline
+            context.scene.frame_set(current_frame + 1)
 
         return {"FINISHED"}
 
@@ -169,42 +177,44 @@ class OBJECT_OT_join_off_objects_on(bpy.types.Operator):
     def execute(self, context):
         # Get the current frame
         current_frame = context.scene.frame_current
-        
+
         # Store selected objects
         selected_objects = list(context.selected_objects)
-        
+
         # Create a copy of the selected objects before joining
         original_objects = selected_objects.copy()
-        
+
         # Join all selected objects
         if len(selected_objects) > 1:
             # Duplicate the objects first
             bpy.ops.object.duplicate()
             # Get the duplicated objects
             duplicated_objects = context.selected_objects
-            
+
             # Set the active object (target for joining)
             context.view_layer.objects.active = duplicated_objects[0]
-            
+
             # Join objects
             bpy.ops.object.join()
-            
+
             # The joined object is now the active object
             joined_object = context.active_object
             # Rename the joined object
             joined_object.name = "Joined_Group"
             joined_object.select_set(True)
-            
+
             # Make the joined object invisible (opposite of the other operator)
             toggle_visibility(joined_object, current_frame, False)
-            
+
             # Make the original objects visible (opposite of the other operator)
             for obj in original_objects:
                 toggle_visibility(obj, current_frame, True)
-            
+
             self.report(
                 {"INFO"},
                 f"Created group and toggled visibility for {len(original_objects)} objects",
             )
 
+            # Step one frame forward in the timeline
+            context.scene.frame_set(current_frame + 1)
         return {"FINISHED"}

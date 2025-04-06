@@ -1,24 +1,38 @@
 from .utils import add_current_module_to_path
 import bpy
 
-
 # Import the operators from the operators package
-from .operators import (
+from .operators.alignment import (
     OBJECT_OT_align_to_active,
     OBJECT_OT_align_collection,
+)
+
+from .operators.imports import (
     ImportTypstOperator,
     TXT_FH_import,
+)
+
+from .operators.path import (
     OBJECT_OT_create_arc,
     OBJECT_OT_follow_path,
     OBJECT_OT_arc_and_follow,
     OBJECT_OT_hide_bezier_collection,
+)
+
+from .operators.visibility import (
     OBJECT_OT_visibility_on,
     OBJECT_OT_visibility_off,
     OBJECT_OT_join_on_objects_off,
     OBJECT_OT_join_off_objects_on,
+)
+
+from .operators.fade import (
     OBJECT_OT_fade_in,
-    OBJECT_OT_fade_in_to_plane,
     OBJECT_OT_fade_out,
+    OBJECT_OT_fade_in_to_plane,
+)
+
+from .operators.utility import (
     OBJECT_OT_copy_without_keyframes,
 )
 
@@ -70,18 +84,21 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             icon="HIDE_ON",
         )
 
-
         # Visibility tools
         box = layout.box()
         box.label(text="Visibility")
         row = box.row(align=True)
         row.operator(OBJECT_OT_visibility_on.bl_idname, text="On", icon="HIDE_OFF")
         row.operator(OBJECT_OT_visibility_off.bl_idname, text="Off", icon="HIDE_ON")
-        
+
         # Group visibility tools
         row = box.row(align=True)
-        row.operator(OBJECT_OT_join_on_objects_off.bl_idname, text="Join", icon="OBJECT_DATA")
-        row.operator(OBJECT_OT_join_off_objects_on.bl_idname, text="Un-Join", icon="MOD_EXPLODE")
+        row.operator(
+            OBJECT_OT_join_on_objects_off.bl_idname, text="Join", icon="OBJECT_DATA"
+        )
+        row.operator(
+            OBJECT_OT_join_off_objects_on.bl_idname, text="Un-Join", icon="MOD_EXPLODE"
+        )
 
         # Fade tools
         box = layout.box()

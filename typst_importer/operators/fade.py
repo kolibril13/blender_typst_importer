@@ -44,8 +44,20 @@ class OBJECT_OT_fade_in(bpy.types.Operator):
         return {"FINISHED"}
 
 
+def get_or_create_collection(name):
+    """Get a collection by name, or create it if it doesn't exist"""
+    if name in bpy.data.collections:
+        return bpy.data.collections[name]
+    else:
+        # Create new collection
+        collection = bpy.data.collections.new(name)
+        # Link it to the scene
+        bpy.context.scene.collection.children.link(collection)
+        return collection
+
+
 class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
-    """Fade in selected objects and move copies to the animation plane (first collection)"""
+    """Fade in selected objects and move copies to the animation plane (AnimationObjs collection)"""
 
     bl_idname = "object.fade_in_to_plane"
     bl_label = "Fade In (Move to Animation Plane)"
@@ -60,14 +72,8 @@ class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
         current_frame = context.scene.frame_current
         end_frame = current_frame + 10
 
-        # Get the first collection in the scene
-        target_collection = None
-        if bpy.data.collections:
-            target_collection = bpy.data.collections[0]
-
-        if not target_collection:
-            self.report({"WARNING"}, "No collections found in the scene")
-            return {"CANCELLED"}
+        # Get or create the "AnimationObjs" collection
+        target_collection = get_or_create_collection("AnimationObjs")
 
         created_objects = []
 
@@ -85,7 +91,7 @@ class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
             # Set z coordinate to 0
             copy_obj.location.z = 0
 
-            # Move the copy to the first collection
+            # Move the copy to the AnimationObjs collection
             # First remove from current collections
             for collection in bpy.data.collections:
                 if copy_obj.name in collection.objects:
@@ -93,7 +99,7 @@ class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
 
             # Add to target collection
             target_collection.objects.link(copy_obj)
-            #
+            
             # Make the object visible
             toggle_visibility(copy_obj, current_frame, True)
 
@@ -122,7 +128,7 @@ class OBJECT_OT_fade_in_to_plane(bpy.types.Operator):
 
         self.report(
             {"INFO"},
-            f"Created and fading in {len(created_objects)} objects in collection '{target_collection.name}'",
+            f"Created and fading in {len(created_objects)} objects in collection 'AnimationObjs'",
         )
         return {"FINISHED"}
 

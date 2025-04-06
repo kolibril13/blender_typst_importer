@@ -1,6 +1,6 @@
 import bpy
 from .visibility import toggle_visibility
-from .collections import get_or_create_collection
+from .op_utils import get_or_create_collection
 
 
 class OBJECT_OT_fade_in(bpy.types.Operator):

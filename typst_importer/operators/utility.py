@@ -1,6 +1,6 @@
 import bpy
 from .visibility import toggle_visibility
-from .fade import get_or_create_collection
+from .collections import get_or_create_collection
 
 
 

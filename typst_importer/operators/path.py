@@ -1,6 +1,6 @@
 import bpy
 from ..node_groups import create_follow_curve_node_group
-from .fade import get_or_create_collection
+from .collections import get_or_create_collection
 
 # Helper functions
 def create_bezier_curve(first_co, second_co, curve_height):

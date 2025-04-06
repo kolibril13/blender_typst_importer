@@ -1,6 +1,6 @@
 import bpy
 from ..node_groups import visibility_node_group
-from .fade import get_or_create_collection
+from .collections import get_or_create_collection
 
 
 def toggle_visibility(obj, current_frame, make_visible):

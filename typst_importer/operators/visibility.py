@@ -94,3 +94,117 @@ class OBJECT_OT_visibility_off(bpy.types.Operator):
             f"Turned off visibility for {len(context.selected_objects)} objects",
         )
         return {"FINISHED"} 
+
+
+class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
+    """
+    Create a joined object from selected objects, make the joined object visible and the individual objects invisible
+    """
+
+    bl_idname = "object.join_on_objects_off"
+    bl_label = "Join: Objects -> Joined"
+    bl_options ={"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.selected_objects) > 0
+
+    def execute(self, context):
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        
+        # Store selected objects
+        selected_objects = list(context.selected_objects)
+        
+        # Create a copy of the selected objects before joining
+        original_objects = selected_objects.copy()
+        
+        # Join all selected objects
+        if len(selected_objects) > 1:
+            # Duplicate the objects first
+            bpy.ops.object.duplicate()
+            # Get the duplicated objects
+            duplicated_objects = context.selected_objects
+            
+            # Set the active object (target for joining)
+            context.view_layer.objects.active = duplicated_objects[0]
+            
+            # Join objects
+            bpy.ops.object.join()
+            
+            # The joined object is now the active object
+            joined_object = context.active_object
+            # Rename the joined object
+            joined_object.name = "Joined_Group"
+            joined_object.select_set(True)
+            
+            # Make the joined object visible
+            toggle_visibility(joined_object, current_frame, True)
+            
+            # Make the original objects invisible
+            for obj in original_objects:
+                toggle_visibility(obj, current_frame, False)
+            
+            self.report(
+                {"INFO"},
+                f"Created group and toggled visibility for {len(original_objects)} objects",
+            )
+
+        return {"FINISHED"}
+
+
+class OBJECT_OT_join_off_objects_on(bpy.types.Operator):
+    """
+    Create a joined object from selected objects, make the joined object invisible and the individual objects visible
+    """
+
+    bl_idname = "object.join_off_objects_on"
+    bl_label = "Join: Joined -> Objects"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.selected_objects) > 0
+
+    def execute(self, context):
+        # Get the current frame
+        current_frame = context.scene.frame_current
+        
+        # Store selected objects
+        selected_objects = list(context.selected_objects)
+        
+        # Create a copy of the selected objects before joining
+        original_objects = selected_objects.copy()
+        
+        # Join all selected objects
+        if len(selected_objects) > 1:
+            # Duplicate the objects first
+            bpy.ops.object.duplicate()
+            # Get the duplicated objects
+            duplicated_objects = context.selected_objects
+            
+            # Set the active object (target for joining)
+            context.view_layer.objects.active = duplicated_objects[0]
+            
+            # Join objects
+            bpy.ops.object.join()
+            
+            # The joined object is now the active object
+            joined_object = context.active_object
+            # Rename the joined object
+            joined_object.name = "Joined_Group"
+            joined_object.select_set(True)
+            
+            # Make the joined object invisible (opposite of the other operator)
+            toggle_visibility(joined_object, current_frame, False)
+            
+            # Make the original objects visible (opposite of the other operator)
+            for obj in original_objects:
+                toggle_visibility(obj, current_frame, True)
+            
+            self.report(
+                {"INFO"},
+                f"Created group and toggled visibility for {len(original_objects)} objects",
+            )
+
+        return {"FINISHED"}

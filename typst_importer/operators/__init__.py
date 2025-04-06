@@ -18,6 +18,8 @@ from .path import (
 from .visibility import (
     OBJECT_OT_visibility_on,
     OBJECT_OT_visibility_off,
+    OBJECT_OT_join_on_objects_off,
+    OBJECT_OT_join_off_objects_on,
     toggle_visibility,
 )
 

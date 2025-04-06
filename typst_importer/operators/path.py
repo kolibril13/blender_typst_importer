@@ -1,5 +1,6 @@
 import bpy
 from ..node_groups import create_follow_curve_node_group
+from .fade import get_or_create_collection
 
 # Helper functions
 def create_bezier_curve(first_co, second_co, curve_height):
@@ -167,6 +168,9 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
             self.report({"WARNING"}, "Active object must be a curve")
             return {"CANCELLED"}
 
+        # Get or create the AnimationObjs collection
+        target_collection = get_or_create_collection("AnimationObjs")
+
         # Create a copy of the follower obj
         bpy.ops.object.select_all(action="DESELECT")
         follower_obj.select_set(True)
@@ -179,12 +183,14 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         arise_obj.name = f"{follower_obj.name}_arise"
         burst_obj.name = f"{follower_obj.name}_burst"
 
-        # Get the collection of the first object
-        first_obj_collection = None
+        # Move the burst object to the AnimationObjs collection
+        # First remove from current collections
         for collection in bpy.data.collections:
-            if follower_obj.name in collection.objects:
-                first_obj_collection = collection
-                break
+            if burst_obj.name in collection.objects:
+                collection.objects.unlink(burst_obj)
+        
+        # Add to target collection
+        target_collection.objects.link(burst_obj)
 
         # Create a geometry nodes modifier for the moving obj (for path following)
         burst_obj_modifier = burst_obj.modifiers.new(name="FollowPath", type="NODES")
@@ -231,7 +237,7 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
 
         self.report(
             {"INFO"},
-            f"Created objects: {arise_obj.name} (with Visibility modifier) and {burst_obj.name} (with Follow Path modifier)",
+            f"Created objects: {arise_obj.name} (with Visibility modifier) and {burst_obj.name} (with Follow Path modifier) in 'AnimationObjs' collection",
         )
         return {"FINISHED"}
 
@@ -278,6 +284,9 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         # Add the curve to the beziers collection
         beziers_collection.objects.link(curve_obj)
 
+        # Get or create the AnimationObjs collection
+        target_collection = get_or_create_collection("AnimationObjs")
+
         # Step 3: Set up the first object to follow the path
         # Create a copy of the first object
         bpy.ops.object.select_all(action="DESELECT")
@@ -294,12 +303,14 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         arise_obj.name = f"{prefix}_arise"
         burst_obj.name = f"{prefix}_burst"
 
-        # Get the collection of the first object
-        first_obj_collection = None
+        # Move the burst object to the AnimationObjs collection
+        # First remove from current collections
         for collection in bpy.data.collections:
-            if first_obj.name in collection.objects:
-                first_obj_collection = collection
-                break
+            if burst_obj.name in collection.objects:
+                collection.objects.unlink(burst_obj)
+        
+        # Add to target collection
+        target_collection.objects.link(burst_obj)
 
         # Create a copy of the second object at z=0
         bpy.ops.object.select_all(action="DESELECT")
@@ -312,14 +323,14 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         # Place the destination object at z=0
         conclude_obj.location.z = 0
 
-        # Move the destination object to the first object's collection
-        if first_obj_collection:
-            # Remove from current collection
-            for collection in bpy.data.collections:
-                if conclude_obj.name in collection.objects:
-                    collection.objects.unlink(conclude_obj)
-            # Add to first object's collection
-            first_obj_collection.objects.link(conclude_obj)
+        # Move the conclude object to the AnimationObjs collection
+        # First remove from current collections
+        for collection in bpy.data.collections:
+            if conclude_obj.name in collection.objects:
+                collection.objects.unlink(conclude_obj)
+        
+        # Add to target collection
+        target_collection.objects.link(conclude_obj)
 
         # Create a geometry nodes modifier for the moving obj (for path following)
         burst_obj_modifier = burst_obj.modifiers.new(name="FollowPath", type="NODES")
@@ -371,7 +382,7 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
 
         self.report(
             {"INFO"},
-            f"Created arc and set up {burst_obj.name} to follow it. {arise_obj.name} will be hidden. {conclude_obj.name} will appear at the end.",
+            f"Created arc and set up {burst_obj.name} and {conclude_obj.name} in 'AnimationObjs' collection. {arise_obj.name} will be hidden.",
         )
         return {"FINISHED"}
 

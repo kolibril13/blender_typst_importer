@@ -1,5 +1,6 @@
 import bpy
 from ..node_groups import visibility_node_group
+from .fade import get_or_create_collection
 
 
 def toggle_visibility(obj, current_frame, make_visible):
@@ -118,6 +119,9 @@ class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
         # Get the current frame
         current_frame = context.scene.frame_current
 
+        # Get or create the AnimationObjs collection
+        target_collection = get_or_create_collection("AnimationObjs")
+
         # Store selected objects
         selected_objects = list(context.selected_objects)
 
@@ -143,6 +147,15 @@ class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
             joined_object.name = "Joined_Group"
             joined_object.select_set(True)
 
+            # Move the joined object to the AnimationObjs collection
+            # First remove from current collections
+            for collection in bpy.data.collections:
+                if joined_object.name in collection.objects:
+                    collection.objects.unlink(joined_object)
+            
+            # Add to target collection
+            target_collection.objects.link(joined_object)
+
             # Make the joined object visible
             toggle_visibility(joined_object, current_frame, True)
 
@@ -152,7 +165,7 @@ class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
 
             self.report(
                 {"INFO"},
-                f"Created group and toggled visibility for {len(original_objects)} objects",
+                f"Created joined group in 'AnimationObjs' collection and toggled visibility for {len(original_objects)} objects",
             )
 
             # Step one frame forward in the timeline
@@ -178,6 +191,9 @@ class OBJECT_OT_join_off_objects_on(bpy.types.Operator):
         # Get the current frame
         current_frame = context.scene.frame_current
 
+        # Get or create the AnimationObjs collection
+        target_collection = get_or_create_collection("AnimationObjs")
+
         # Store selected objects
         selected_objects = list(context.selected_objects)
 
@@ -203,6 +219,15 @@ class OBJECT_OT_join_off_objects_on(bpy.types.Operator):
             joined_object.name = "Joined_Group"
             joined_object.select_set(True)
 
+            # Move the joined object to the AnimationObjs collection
+            # First remove from current collections
+            for collection in bpy.data.collections:
+                if joined_object.name in collection.objects:
+                    collection.objects.unlink(joined_object)
+            
+            # Add to target collection
+            target_collection.objects.link(joined_object)
+
             # Make the joined object invisible (opposite of the other operator)
             toggle_visibility(joined_object, current_frame, False)
 
@@ -212,7 +237,7 @@ class OBJECT_OT_join_off_objects_on(bpy.types.Operator):
 
             self.report(
                 {"INFO"},
-                f"Created group and toggled visibility for {len(original_objects)} objects",
+                f"Created joined group in 'AnimationObjs' collection and toggled visibility for {len(original_objects)} objects",
             )
 
             # Step one frame forward in the timeline

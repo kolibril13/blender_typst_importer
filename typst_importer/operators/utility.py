@@ -1,5 +1,6 @@
 import bpy
 from .visibility import toggle_visibility
+from .fade import get_or_create_collection
 
 
 
@@ -23,13 +24,10 @@ class OBJECT_OT_copy_without_keyframes(bpy.types.Operator):
         copied_objects = []
         original_objects = list(context.selected_objects)  # Create a copy of the list
 
-        for obj in original_objects:
-            # Store the original object's collection
-            obj_collections = []
-            for collection in bpy.data.collections:
-                if obj.name in collection.objects:
-                    obj_collections.append(collection)
+        # Get or create AnimationObjs collection
+        target_collection = get_or_create_collection("AnimationObjs")
 
+        for obj in original_objects:
             # Select only this object and deselect others
             bpy.ops.object.select_all(action='DESELECT')
             obj.select_set(True)
@@ -53,10 +51,14 @@ class OBJECT_OT_copy_without_keyframes(bpy.types.Operator):
             # Add to the list of copied objects
             copied_objects.append(new_obj)
             
-            # Add the new object to the same collections as the original
-            for collection in obj_collections:
-                if new_obj.name not in collection.objects:
-                    collection.objects.link(new_obj)
+            # Move the new object to the AnimationObjs collection
+            # First remove from current collections
+            for collection in bpy.data.collections:
+                if new_obj.name in collection.objects:
+                    collection.objects.unlink(new_obj)
+            
+            # Add to target collection
+            target_collection.objects.link(new_obj)
 
             # Toggle visibility of the original object to off
             toggle_visibility(obj, current_frame, make_visible=False)
@@ -74,6 +76,6 @@ class OBJECT_OT_copy_without_keyframes(bpy.types.Operator):
         
         self.report(
             {"INFO"},
-            f"Created {len(copied_objects)} static copies without keyframes"
+            f"Created {len(copied_objects)} static copies in collection 'AnimationObjs'"
         )
         return {"FINISHED"} 

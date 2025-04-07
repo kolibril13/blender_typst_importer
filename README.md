@@ -96,6 +96,11 @@ for i in range(0,10):
 # Changelog
 
 
+## v0.1.13
+
+- Better release workflow
+- New tutorial
+
 
 ## v0.1.12
 

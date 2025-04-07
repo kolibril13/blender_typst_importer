@@ -69,23 +69,19 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
 
         # Arc and path tools
         box = layout.box()
-        box.label(text="Path Animation")
-        box.operator(
-            OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="SPHERECURVE"
-        )
-        box.operator(
-            OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH"
-        )
+        box.label(text="Path Animation (XY)")
+        # box.operator(
+        #     OBJECT_OT_create_arc.bl_idname, text="Create Arc (XY)", icon="SPHERECURVE"
+        # )
+        # box.operator(
+        #     OBJECT_OT_follow_path.bl_idname, text="Follow Path", icon="CURVE_PATH"
+        # )
         box.operator(
             OBJECT_OT_arc_and_follow.bl_idname,
             text="Arc and Follow",
             icon="FORCE_CURVE",
         )
-        box.operator(
-            OBJECT_OT_hide_bezier_collection.bl_idname,
-            text="Hide Bezier Curves",
-            icon="HIDE_ON",
-        )
+
 
         # Visibility tools
         box = layout.box()
@@ -94,14 +90,10 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
         row.operator(OBJECT_OT_visibility_on.bl_idname, text="On", icon="HIDE_OFF")
         row.operator(OBJECT_OT_visibility_off.bl_idname, text="Off", icon="HIDE_ON")
 
-        # Group visibility tools
-        row = box.row(align=True)
-        row.operator(
-            OBJECT_OT_join_on_objects_off.bl_idname, text="Join", icon="OBJECT_DATA"
-        )
-        row.operator(
-            OBJECT_OT_join_off_objects_on.bl_idname, text="Un-Join", icon="MOD_EXPLODE"
-        )
+
+        # row.operator(
+        #     OBJECT_OT_join_off_objects_on.bl_idname, text="Un-Join", icon="MOD_EXPLODE"
+        # )
         row = box.row(align=True)
 
         row.operator(
@@ -110,7 +102,12 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
         row.operator(
             OBJECT_OT_copy_to_plane.bl_idname, text="Objects to 🌀", icon="MOD_EXPLODE"
         )
-        box.operator(
+
+        row = box.row(align=True)
+        row.operator(
+            OBJECT_OT_join_on_objects_off.bl_idname, text="Copy joined", icon="OBJECT_DATA"
+        )
+        row.operator(
             OBJECT_OT_copy_without_keyframes.bl_idname,
             text="Copy (no keyframes)",
             icon="DUPLICATE",
@@ -151,11 +148,11 @@ def register():
     bpy.utils.register_class(OBJECT_OT_visibility_on)
     bpy.utils.register_class(OBJECT_OT_visibility_off)
     bpy.utils.register_class(OBJECT_OT_join_on_objects_off)
-    bpy.utils.register_class(OBJECT_OT_join_off_objects_on)
+    # bpy.utils.register_class(OBJECT_OT_join_off_objects_on)
     # bpy.utils.register_class(OBJECT_OT_fade_in)
     bpy.utils.register_class(OBJECT_OT_fade_in_to_plane)
     bpy.utils.register_class(OBJECT_OT_fade_out)
-    bpy.utils.register_class(OBJECT_OT_hide_bezier_collection)
+    # bpy.utils.register_class(OBJECT_OT_hide_bezier_collection)
     bpy.utils.register_class(OBJECT_OT_copy_without_keyframes)
     bpy.utils.register_class(ImportTypstOperator)
     bpy.utils.register_class(TXT_FH_import)
@@ -193,12 +190,12 @@ def unregister():
     bpy.utils.unregister_class(VIEW3D_PT_typst_animation_tools)
     bpy.utils.unregister_class(TXT_FH_import)
     bpy.utils.unregister_class(ImportTypstOperator)
-    bpy.utils.unregister_class(OBJECT_OT_hide_bezier_collection)
+    # bpy.utils.unregister_class(OBJECT_OT_hide_bezier_collection)
     bpy.utils.unregister_class(OBJECT_OT_copy_without_keyframes)
     bpy.utils.unregister_class(OBJECT_OT_fade_out)
     bpy.utils.unregister_class(OBJECT_OT_fade_in_to_plane)
     # bpy.utils.unregister_class(OBJECT_OT_fade_in)
-    bpy.utils.unregister_class(OBJECT_OT_join_off_objects_on)
+    # bpy.utils.unregister_class(OBJECT_OT_join_off_objects_on)
     bpy.utils.unregister_class(OBJECT_OT_join_on_objects_off)
     bpy.utils.unregister_class(OBJECT_OT_visibility_off)
     bpy.utils.unregister_class(OBJECT_OT_visibility_on)

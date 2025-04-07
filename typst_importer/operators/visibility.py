@@ -174,6 +174,155 @@ class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class OBJECT_OT_join_to_plane(bpy.types.Operator):
+    """
+    Create a joined object from selected objects at z=0 with visibility on
+    """
+
+    bl_idname = "object.join_to_plane"
+    bl_label = "Join to Animation Plane"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.selected_objects) > 0
+
+    def execute(self, context):
+        # Get the current frame
+        current_frame = context.scene.frame_current
+
+        # Get or create the AnimationObjs collection
+        target_collection = get_or_create_collection("AnimationObjs")
+
+        # Store selected objects
+        selected_objects = list(context.selected_objects)
+
+        # Join all selected objects
+        if len(selected_objects) > 1:
+            # Duplicate the objects first
+            bpy.ops.object.duplicate()
+            # Get the duplicated objects
+            duplicated_objects = context.selected_objects
+
+            # Set the active object (target for joining)
+            context.view_layer.objects.active = duplicated_objects[0]
+
+            # Join objects
+            bpy.ops.object.join()
+
+            # The joined object is now the active object
+            joined_object = context.active_object
+            # Rename the joined object
+            joined_object.name = "Joined_Group_Plane"
+            joined_object.select_set(True)
+            
+            # Set z coordinate to 0
+            joined_object.location.z = 0
+
+            # Move the joined object to the AnimationObjs collection
+            # First remove from current collections
+            for collection in bpy.data.collections:
+                if joined_object.name in collection.objects:
+                    collection.objects.unlink(joined_object)
+            
+            # Add to target collection
+            target_collection.objects.link(joined_object)
+
+            # Make the joined object visible
+            toggle_visibility(joined_object, current_frame, True)
+
+            self.report(
+                {"INFO"},
+                f"Created joined group at z=0 in 'AnimationObjs' collection with visibility on",
+            )
+
+            # Step one frame forward in the timeline
+            context.scene.frame_set(current_frame + 1)
+        return {"FINISHED"}
+
+
+class OBJECT_OT_copy_to_plane(bpy.types.Operator):
+    """
+    Create copies of selected objects at z=0 with opacity set to 1
+    """
+
+    bl_idname = "object.copy_to_plane"
+    bl_label = "Copy to Animation Plane"
+    bl_options = {"REGISTER", "UNDO"}
+
+    @classmethod
+    def poll(cls, context):
+        return len(context.selected_objects) > 0
+
+    def execute(self, context):
+        # Get the current frame
+        current_frame = context.scene.frame_current
+
+        # Get or create the AnimationObjs collection
+        target_collection = get_or_create_collection("AnimationObjs")
+
+        # Store selected objects
+        selected_objects = list(context.selected_objects)
+        created_objects = []
+
+        for obj in selected_objects:
+            # Deselect all objects
+            bpy.ops.object.select_all(action="DESELECT")
+            
+            # Select only this object
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            
+            # Duplicate the object
+            bpy.ops.object.duplicate()
+            
+            # Get the newly created copy
+            copy_obj = context.active_object
+            copy_obj.name = f"{obj.name}_plane"
+            
+            # Set z coordinate to 0
+            copy_obj.location.z = 0
+            
+            # Move the copy to the AnimationObjs collection
+            # First remove from current collections
+            for collection in bpy.data.collections:
+                if copy_obj.name in collection.objects:
+                    collection.objects.unlink(copy_obj)
+            
+            # Add to target collection
+            target_collection.objects.link(copy_obj)
+            
+            # Make the object visible
+            toggle_visibility(copy_obj, current_frame, True)
+            
+            # Ensure the opacity property exists
+            if "opacity" not in copy_obj:
+                copy_obj["opacity"] = 0.0
+            
+            # Set opacity to 1
+            copy_obj["opacity"] = 1.0
+            copy_obj.keyframe_insert(data_path='["opacity"]', frame=current_frame)
+            
+            created_objects.append(copy_obj.name)
+
+        # Select all the newly created objects
+        bpy.ops.object.select_all(action="DESELECT")
+        for obj_name in created_objects:
+            if obj_name in bpy.data.objects:
+                bpy.data.objects[obj_name].select_set(True)
+
+        self.report(
+            {"INFO"},
+            f"Created {len(created_objects)} individual copies at z=0 in 'AnimationObjs' collection with opacity set to 1",
+        )
+        
+        # Step one frame forward in the timeline
+        context.scene.frame_set(current_frame + 1)
+        return {"FINISHED"}
+    
+
+
+    
 class OBJECT_OT_join_off_objects_on(bpy.types.Operator):
     """
     Create a joined object from selected objects, make the joined object invisible and the individual objects visible

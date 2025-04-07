@@ -15,10 +15,12 @@ jobs:
 
       - name: Download Release Assets and Notes
         run: |
-          mkdir assets
+          mkdir -p assets
           gh release download -p "*.zip" -D assets/
           RELEASE_NOTES=`gh release view --json body | jq -r .body`
-          echo "RELEASE_NOTES=$RELEASE_NOTES" >> $GITHUB_ENV
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          echo "$RELEASE_NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

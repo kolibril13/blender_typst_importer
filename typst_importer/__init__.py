@@ -87,7 +87,7 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
         box = layout.box()
         box.label(text="Visibility")
         row = box.row(align=True)
-        row.operator(OBJECT_OT_visibility_on.bl_idname, text="On", icon="HIDE_OFF")
+        row.operator(OBJECT_OT_copy_to_plane.bl_idname, text="On to 🌀", icon="HIDE_OFF")
         row.operator(OBJECT_OT_visibility_off.bl_idname, text="Off", icon="HIDE_ON")
 
 
@@ -96,26 +96,14 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
         # )
         row = box.row(align=True)
 
-        row.operator(
-            OBJECT_OT_join_to_plane.bl_idname, text="Joined to 🌀", icon="MOD_EXPLODE"
-        )
-        row.operator(
-            OBJECT_OT_copy_to_plane.bl_idname, text="Objects to 🌀", icon="MOD_EXPLODE"
-        )
+        # row.operator(
+        #     OBJECT_OT_join_to_plane.bl_idname, text="Joined to 🌀", icon="MOD_EXPLODE"
+        # )
+        # row.operator(
+        #     OBJECT_OT_copy_to_plane.bl_idname, text="Objects to 🌀", icon="MOD_EXPLODE"
+        # )
 
-        row = box.row(align=True)
-        row.operator(
-            OBJECT_OT_join_on_objects_off.bl_idname, text="Copy joined", icon="OBJECT_DATA"
-        )
-        row.operator(
-            OBJECT_OT_copy_without_keyframes.bl_idname,
-            text="Copy (no keyframes)",
-            icon="DUPLICATE",
-        )
 
-        # Fade tools
-        box = layout.box()
-        box.label(text="Fade Effects")
         # box.operator(
         #     OBJECT_OT_fade_in.bl_idname, text="Fade In Objects", icon="TRIA_RIGHT"
         # )
@@ -129,6 +117,17 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             OBJECT_OT_fade_out.bl_idname, text="FadeOut ", icon="TRIA_LEFT"
         )
 
+        # Arc and path tools
+        box = layout.box()
+        box.label(text="Utils")
+       
+        row = box.row(align=True)
+
+        row.operator(
+            OBJECT_OT_copy_without_keyframes.bl_idname,
+            text="Copy (no keyframes)",
+            icon="DUPLICATE",
+        )
 
 def menu_func_import(self, context):
     """Add an entry into the File > Import menu."""

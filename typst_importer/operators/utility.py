@@ -64,7 +64,9 @@ class OBJECT_OT_copy_without_keyframes(bpy.types.Operator):
             toggle_visibility(obj, current_frame, make_visible=False)
             
             # Make the new object visible right away
-            toggle_visibility(new_obj, current_frame, make_visible=True)
+            new_visibility_modifier = toggle_visibility(new_obj, current_frame, make_visible=True)
+            # Set initial visibility state to True for the new object
+            new_visibility_modifier["Socket_2"] = True
 
         # Reselect all the new objects
         bpy.ops.object.select_all(action='DESELECT')

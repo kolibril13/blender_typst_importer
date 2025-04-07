@@ -232,7 +232,6 @@ class OBJECT_OT_join_to_plane(bpy.types.Operator):
 
         return {"FINISHED"}
 
-
 class OBJECT_OT_copy_to_plane(bpy.types.Operator):
     """
     Create copies of selected objects at z=0 with opacity set to 1
@@ -284,8 +283,10 @@ class OBJECT_OT_copy_to_plane(bpy.types.Operator):
             # Add to target collection
             target_collection.objects.link(copy_obj)
             
-            # Make the object visible
-            toggle_visibility(copy_obj, current_frame, True)
+            # Make the object visible with visibility modifier
+            new_visibility_modifier = toggle_visibility(copy_obj, current_frame, True)
+            # Set initial visibility state to True for the new object
+            new_visibility_modifier["Socket_2"] = True
             
             # Ensure the opacity property exists
             if "opacity" not in copy_obj:
@@ -308,9 +309,7 @@ class OBJECT_OT_copy_to_plane(bpy.types.Operator):
             f"Created {len(created_objects)} individual copies at z=0 in 'AnimationObjs' collection with opacity set to 1",
         )
         
-
         return {"FINISHED"}
-    
 
 
     

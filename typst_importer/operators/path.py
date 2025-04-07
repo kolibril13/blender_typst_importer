@@ -1,6 +1,7 @@
 import bpy
 from ..node_groups import create_follow_curve_node_group
 from .op_utils import get_or_create_collection
+from ..operators.visibility import toggle_visibility
 
 # Helper functions
 def create_bezier_curve(first_co, second_co, curve_height):
@@ -232,7 +233,7 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         burst_obj_modifier["Socket_3"] = 0.0
 
         # Toggle visibility of the standing object
-        from ..operators.visibility import toggle_visibility
+
         toggle_visibility(arise_obj, current_frame, make_visible=False)
 
         self.report(
@@ -300,8 +301,8 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         prefix = f"{first_obj.name}"
 
         # Ensure the copy has a descriptive name
-        arise_obj.name = f"{prefix}_arise"
-        burst_obj.name = f"{prefix}_burst"
+        arise_obj.name = f"{prefix}_a"
+        burst_obj.name = f"{prefix}_b"
 
         # Move the burst object to the AnimationObjs collection
         # First remove from current collections
@@ -318,7 +319,7 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         bpy.context.view_layer.objects.active = second_obj
         bpy.ops.object.duplicate()
         conclude_obj = bpy.context.active_object
-        conclude_obj.name = f"{prefix}_conclude"
+        conclude_obj.name = f"{prefix}_c"
 
         # Place the destination object at z=0
         conclude_obj.location.z = 0

@@ -373,12 +373,12 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
 
         # Step 4: Toggle visibility of the standing object
         from ..operators.visibility import toggle_visibility
-        toggle_visibility(arise_obj, current_frame, make_visible=False)
+        toggle_visibility(arise_obj, current_frame+1 , make_visible=False)  
 
         # Step 5: Set up visibility for the destination object
 
         # Make the destination object visible at the end of the animation
-        toggle_visibility(conclude_obj, next_frame - 1, make_visible=True)
+        toggle_visibility(conclude_obj, next_frame , make_visible=True)
 
         self.report(
             {"INFO"},

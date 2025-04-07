@@ -88,7 +88,9 @@ class OBJECT_OT_visibility_off(bpy.types.Operator):
         current_frame = context.scene.frame_current
 
         for obj in context.selected_objects:
-            toggle_visibility(obj, current_frame, False)
+            new_visibility_modifier = toggle_visibility(obj, current_frame, False)
+            # Set initial visibility state to False for the object
+            new_visibility_modifier["Socket_2"] = False
 
         self.report(
             {"INFO"},

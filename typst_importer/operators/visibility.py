@@ -30,12 +30,12 @@ def toggle_visibility(obj, current_frame, make_visible):
     # Set initial state at current frame
     initial_state = not make_visible
     visibility_modifier["Socket_2"] = initial_state
-    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
+    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame-1)
 
     # Set target state at next frame
     target_state = make_visible
     visibility_modifier["Socket_2"] = target_state
-    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame + 1)
+    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
 
     # Reset to initial state for display
     visibility_modifier["Socket_2"] = initial_state
@@ -67,8 +67,6 @@ class OBJECT_OT_visibility_on(bpy.types.Operator):
             f"Turned on visibility for {len(context.selected_objects)} objects",
         )
 
-        # Step one frame forward in the timeline
-        context.scene.frame_set(current_frame + 1)
         return {"FINISHED"}
 
 
@@ -97,8 +95,6 @@ class OBJECT_OT_visibility_off(bpy.types.Operator):
             f"Turned off visibility for {len(context.selected_objects)} objects",
         )
 
-        # Step one frame forward in the timeline
-        context.scene.frame_set(current_frame + 1)
         return {"FINISHED"}
 
 
@@ -168,8 +164,6 @@ class OBJECT_OT_join_on_objects_off(bpy.types.Operator):
                 f"Created joined group in 'AnimationObjs' collection and toggled visibility for {len(original_objects)} objects",
             )
 
-            # Step one frame forward in the timeline
-            context.scene.frame_set(current_frame + 1)
 
         return {"FINISHED"}
 
@@ -236,8 +230,6 @@ class OBJECT_OT_join_to_plane(bpy.types.Operator):
                 f"Created joined group at z=0 in 'AnimationObjs' collection with visibility on",
             )
 
-            # Step one frame forward in the timeline
-            context.scene.frame_set(current_frame + 1)
         return {"FINISHED"}
 
 
@@ -316,8 +308,7 @@ class OBJECT_OT_copy_to_plane(bpy.types.Operator):
             f"Created {len(created_objects)} individual copies at z=0 in 'AnimationObjs' collection with opacity set to 1",
         )
         
-        # Step one frame forward in the timeline
-        context.scene.frame_set(current_frame + 1)
+
         return {"FINISHED"}
     
 
@@ -389,6 +380,5 @@ class OBJECT_OT_join_off_objects_on(bpy.types.Operator):
                 f"Created joined group in 'AnimationObjs' collection and toggled visibility for {len(original_objects)} objects",
             )
 
-            # Step one frame forward in the timeline
-            context.scene.frame_set(current_frame + 1)
+
         return {"FINISHED"}

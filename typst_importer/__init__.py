@@ -166,11 +166,10 @@ def register():
     wm = bpy.context.window_manager
     km = wm.keyconfigs.addon.keymaps.new(name="Object Mode", space_type="EMPTY")
     kmi = km.keymap_items.new(
-        OBJECT_OT_align_to_active.bl_idname, type="F", value="PRESS"
+        OBJECT_OT_align_to_active.bl_idname, type="F", value="PRESS", shift=True
     )
 
     addon_keymaps.append((km, kmi))
-
 
 def unregister():
     # Clean up keyboard shortcuts

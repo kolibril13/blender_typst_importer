@@ -100,8 +100,9 @@ for i in range(0,10):
 ## v0.1.12
 
 - Import every new curve as "n" instead of "Curve"
-- new interface for animation
+- new interface for animation in sthe side panel.
 - Possible to align multiple collections at once.
+- "Shift+F" to align objects
 
 ## v0.1.9,  v0.1.10, v0.1.11
 

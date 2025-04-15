@@ -95,6 +95,9 @@ for i in range(0,10):
 
 # Changelog
 
+## v0.1.14
+
+- use latest typst-py version: https://github.com/messense/typst-py/tree/v0.13.2
 
 ## v0.1.13
 

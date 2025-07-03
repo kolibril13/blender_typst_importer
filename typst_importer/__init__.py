@@ -38,6 +38,10 @@ from .operators.utility import (
     OBJECT_OT_copy_without_keyframes,
 )
 
+from .operators.curve_reveal import (
+    OBJECT_OT_import_curve_reveal,
+)
+
 # Global list to store our keymap entries for cleanup.
 addon_keymaps = []
 
@@ -128,6 +132,15 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             text="Copy (no keyframes)",
             icon="DUPLICATE",
         )
+        
+        # Curve Reveal section
+        box = layout.box()
+        box.label(text="Curve Reveal")
+        box.operator(
+            OBJECT_OT_import_curve_reveal.bl_idname,
+            text="Import Curve Reveal",
+            icon="GREASEPENCIL",
+        )
 
 def menu_func_import(self, context):
     """Add an entry into the File > Import menu."""
@@ -153,6 +166,7 @@ def register():
     bpy.utils.register_class(OBJECT_OT_fade_out)
     # bpy.utils.register_class(OBJECT_OT_hide_bezier_collection)
     bpy.utils.register_class(OBJECT_OT_copy_without_keyframes)
+    bpy.utils.register_class(OBJECT_OT_import_curve_reveal)
     bpy.utils.register_class(ImportTypstOperator)
     bpy.utils.register_class(TXT_FH_import)
     bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
@@ -190,6 +204,7 @@ def unregister():
     bpy.utils.unregister_class(ImportTypstOperator)
     # bpy.utils.unregister_class(OBJECT_OT_hide_bezier_collection)
     bpy.utils.unregister_class(OBJECT_OT_copy_without_keyframes)
+    bpy.utils.unregister_class(OBJECT_OT_import_curve_reveal)
     bpy.utils.unregister_class(OBJECT_OT_fade_out)
     bpy.utils.unregister_class(OBJECT_OT_fade_in_to_plane)
     # bpy.utils.unregister_class(OBJECT_OT_fade_in)

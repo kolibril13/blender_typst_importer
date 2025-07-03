@@ -24,15 +24,10 @@ class OBJECT_OT_import_curve_reveal(bpy.types.Operator):
             
             node_group = db.nodes.append_from_blend(node_group_name, blend_file)
             
-            # Print node names as in the provided snippet
-            for node in node_group.nodes:
-                print(node.name)
-            
             # Add a geometry nodes modifier to the grease pencil object
             modifier = gp_obj.modifiers.new(name="HelloAnimate", type="NODES")
             modifier.node_group = node_group
-            
-            
+                    
             self.report(
                 {"INFO"},
                 f"Created grease pencil object '{gp_obj.name}' with HelloAnimate node tree in 'AnimationObjs' collection"

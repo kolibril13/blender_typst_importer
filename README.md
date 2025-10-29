@@ -95,6 +95,12 @@ for i in range(0,10):
 
 # Changelog
 
+## v0.2.0
+
+* Use Typst version 0.14.0
+* use lxml-6.0.2
+* use svg_path-7.0
+
 ## v0.1.14
 
 - use latest typst-py version: https://github.com/messense/typst-py/tree/v0.13.2

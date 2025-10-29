@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "typst_importer"
-version = "0.1.14"
+version = "0.2.0"
 name = "Typst Importer"
 tagline = "Render mathematical equations and code blocks"
 maintainer = "Jan-Hendrik Müller<jan-hendrik.mueller@uni-goettingen.de>"
@@ -27,15 +27,15 @@ copyright = [
 	"2025 Jan-Hendrik Müller",
 ]
 wheels = [
-	"./wheels/lxml-5.3.2-cp311-cp311-macosx_10_9_universal2.whl",
-	"./wheels/lxml-5.3.2-cp311-cp311-macosx_10_9_x86_64.whl",
-	"./wheels/lxml-5.3.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
-	"./wheels/lxml-5.3.2-cp311-cp311-win_amd64.whl",
-	"./wheels/svg.path-6.3-py2.py3-none-any.whl",
-	"./wheels/typst-0.13.2-cp38-abi3-macosx_10_12_x86_64.whl",
-	"./wheels/typst-0.13.2-cp38-abi3-macosx_11_0_arm64.whl",
-	"./wheels/typst-0.13.2-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
-	"./wheels/typst-0.13.2-cp38-abi3-win_amd64.whl",
+	"./wheels/lxml-6.0.2-cp311-cp311-macosx_10_9_universal2.whl",
+	"./wheels/lxml-6.0.2-cp311-cp311-macosx_10_9_x86_64.whl",
+	"./wheels/lxml-6.0.2-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
+	"./wheels/lxml-6.0.2-cp311-cp311-win_amd64.whl",
+	"./wheels/svg_path-7.0-py2.py3-none-any.whl",
+	"./wheels/typst-0.14.0-cp38-abi3-macosx_10_12_x86_64.whl",
+	"./wheels/typst-0.14.0-cp38-abi3-macosx_11_0_arm64.whl",
+	"./wheels/typst-0.14.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+	"./wheels/typst-0.14.0-cp38-abi3-win_amd64.whl",
 ]
 
 

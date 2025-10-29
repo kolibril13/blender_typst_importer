@@ -4,10 +4,10 @@ from mathutils import Vector
 
 def get_curve_collection_bounds(collection):
     """
-    Calculate the bounding box dimensions of a collection containing curves.
+    Calculate the bounding box dimensions of a collection containing curves and/or meshes.
 
     Args:
-        collection: Blender collection object containing curves
+        collection: Blender collection object containing curves and/or meshes
 
     Returns:
         tuple: ((min_x, min_y, min_z), (max_x, max_y, max_z))
@@ -22,7 +22,7 @@ def get_curve_collection_bounds(collection):
 
     # Iterate through objects in collection
     for obj in collection.objects:
-        if obj.type == "CURVE":
+        if obj.type in ("CURVE", "MESH"):
             # Get evaluated version of the object
             eval_obj = obj.evaluated_get(depsgraph)
 
@@ -43,8 +43,9 @@ def get_curve_collection_bounds(collection):
             # Clean up temporary mesh data
             eval_obj.to_mesh_clear()
 
-    # Check if any curves were found
+    # Check if any curves or meshes were found
     if min_x == float("inf"):
+        # Return None to indicate no valid objects found
         return None
 
     return (Vector((min_x, min_y, min_z)), Vector((max_x, max_y, max_z)))
@@ -59,7 +60,12 @@ def shift_scene_content(curve_collection, margin=0.2):
         curve_collection: Collection containing curves to exclude from shifting
         margin: Additional vertical space to add above the curves (default: 0.4)
     """
-    min_p, max_p = get_curve_collection_bounds(curve_collection)
+    bounds = get_curve_collection_bounds(curve_collection)
+    if bounds is None:
+        print("No curves or meshes found in the collection to determine bounds.")
+        return
+    
+    min_p, max_p = bounds
     dimensions = max_p - min_p
     
     # Select all objects except the curves in collection

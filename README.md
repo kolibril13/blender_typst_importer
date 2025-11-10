@@ -97,7 +97,7 @@ for i in range(0,10):
 
 ## v0.2.0
 
-* Use Typst version 0.14.0
+* Use Typst version 0.14.1 
 * use lxml-6.0.2
 * use svg_path-7.0
 

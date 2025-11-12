@@ -189,41 +189,34 @@ def _convert_to_unfilled_paths(collection: bpy.types.Collection) -> None:
 
 
 def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
-    """Helper function to convert curves to grease pencil."""
+    """Convert curves in a collection to grease pencil objects."""
     print("convert_to_grease_pencil")
 
     blend_file = Path(__file__).parent / "blender_assets.blend"
-    node_group_name = "FONT_FILL"
-
-    # Append the node group
     node_group_dir = str(blend_file) + "/NodeTree/"
+    node_group_name = "FONT_FILL"
     node_group = db.nodes.append_from_blend(node_group_name, node_group_dir)
 
-    # Print contents
-    # print(f"Nodes in node group '{node_group_name}':")
-    # for node in node_group.nodes:
-    #     print(node.name)
+    # Make sure the correct collection is active before adding GP objects
+    bpy.context.view_layer.active_layer_collection = (
+        bpy.context.view_layer.layer_collection.children[collection.name]
+    )
 
-
-
-    gp_collection = db.create_collection(name=f"GP", parent=collection)         
     for obj in collection.objects:
         if obj.type != "CURVE":
             continue
         obj.data.fill_mode = "NONE"
 
+        # Add grease pencil in the active collection
         bpy.ops.object.grease_pencil_add(type='EMPTY')
         gp_obj = bpy.context.active_object
+        gp_obj.location = obj.location  
         gp_obj.name = f"GP_{obj.name}"
-        gp_collection.objects.link(gp_obj)
 
-        for coll in gp_obj.users_collection: # todo: make this better
-            if coll != gp_collection:
-                coll.objects.unlink(gp_obj)
-        
         modifier = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
         modifier.node_group = node_group
         modifier["Socket_2"] = obj
+
 
 def add_indices_to_collection(imported_collection):
     """

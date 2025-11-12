@@ -1,6 +1,7 @@
 from .utils import add_current_module_to_path
 import bpy
 
+
 # Import the operators from the operators package
 from .operators.alignment import (
     OBJECT_OT_align_to_active,
@@ -9,7 +10,7 @@ from .operators.alignment import (
 
 from .operators.imports import (
     ImportTypstOperator,
-    TXT_FH_import,      
+    TXT_FH_import,
 )
 
 from .operators.path import (
@@ -37,6 +38,11 @@ from .operators.fade import (
 from .operators.utility import (
     OBJECT_OT_copy_without_keyframes,
 )
+
+from .operators.jump import (
+    OBJECT_OT_apply_jump,
+)
+
 
 # Global list to store our keymap entries for cleanup.
 addon_keymaps = []
@@ -82,20 +88,29 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             icon="FORCE_CURVE",
         )
 
+        # Jump tools (properly added as its own section)
+        box = layout.box()
+        box.label(text="Jump")
+        row = box.row(align=True)
+        row.operator(
+            OBJECT_OT_apply_jump.bl_idname,
+            text="Make a Jump",
+            icon="OUTLINER_OB_EMPTY",  # Use a distinct icon (optional: change as needed)
+        )
 
         # Visibility tools
         box = layout.box()
         box.label(text="Visibility")
         row = box.row(align=True)
-        row.operator(OBJECT_OT_copy_to_plane.bl_idname, text="On to 🌀", icon="HIDE_OFF")
+        row.operator(
+            OBJECT_OT_copy_to_plane.bl_idname, text="On to 🌀", icon="HIDE_OFF"
+        )
         row.operator(OBJECT_OT_visibility_off.bl_idname, text="Off", icon="HIDE_ON")
-
 
         # row.operator(
         #     OBJECT_OT_join_off_objects_on.bl_idname, text="Un-Join", icon="MOD_EXPLODE"
         # )
         row = box.row(align=True)
-
         # row.operator(
         #     OBJECT_OT_join_to_plane.bl_idname, text="Joined to 🌀", icon="MOD_EXPLODE"
         # )
@@ -103,9 +118,9 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
         #     OBJECT_OT_copy_to_plane.bl_idname, text="Objects to 🌀", icon="MOD_EXPLODE"
         # )
 
-
         # box.operator(
         #     OBJECT_OT_fade_in.bl_idname, text="Fade In Objects", icon="TRIA_RIGHT"
+
         # )
         row = box.row(align=True)
         row.operator(
@@ -113,21 +128,19 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             text="FadeIn to 🌀",
             icon="TRIA_RIGHT",
         )
-        row.operator(
-            OBJECT_OT_fade_out.bl_idname, text="FadeOut ", icon="TRIA_LEFT"
-        )
+        row.operator(OBJECT_OT_fade_out.bl_idname, text="FadeOut ", icon="TRIA_LEFT")
 
         # Arc and path tools
         box = layout.box()
         box.label(text="Utils")
-       
-        row = box.row(align=True)
 
+        row = box.row(align=True)
         row.operator(
             OBJECT_OT_copy_without_keyframes.bl_idname,
             text="Copy (no keyframes)",
             icon="DUPLICATE",
         )
+
 
 def menu_func_import(self, context):
     """Add an entry into the File > Import menu."""
@@ -158,6 +171,7 @@ def register():
     bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
     bpy.utils.register_class(OBJECT_OT_join_to_plane)
     bpy.utils.register_class(OBJECT_OT_copy_to_plane)
+    bpy.utils.register_class(OBJECT_OT_apply_jump)
 
     # Add menu entries
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
@@ -171,6 +185,7 @@ def register():
 
     addon_keymaps.append((km, kmi))
 
+
 def unregister():
     # Clean up keyboard shortcuts
     # Remove all keymaps that were added by the addon
@@ -183,6 +198,7 @@ def unregister():
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
 
     # Unregister Blender classes in reverse order
+    bpy.utils.unregister_class(OBJECT_OT_apply_jump)
     bpy.utils.unregister_class(OBJECT_OT_copy_to_plane)
     bpy.utils.unregister_class(OBJECT_OT_join_to_plane)
     bpy.utils.unregister_class(VIEW3D_PT_typst_animation_tools)

@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "typst_importer"
-version = "0.2.0"
+version = "0.2.1"
 name = "Typst Importer"
 tagline = "Render mathematical equations and code blocks"
 maintainer = "Jan-Hendrik Müller<jan-hendrik.mueller@uni-goettingen.de>"

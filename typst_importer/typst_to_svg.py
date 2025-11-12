@@ -5,6 +5,8 @@ from typing import Optional, Tuple
 from mathutils import Matrix
 import bpy
 import typst
+import databpy as db
+
 from .svg_preprocessing import preprocess_svg
 import contextlib
 
@@ -176,6 +178,52 @@ def _convert_to_meshes(collection: bpy.types.Collection) -> None:
     # Clean up any orphaned data after conversion
     # bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
 
+def _convert_to_unfilled_paths(collection: bpy.types.Collection) -> None:
+    
+    """Helper function to convert curves to unfilled paths."""
+    for obj in collection.objects:
+        if obj.type != "CURVE":
+            continue
+        obj.data.fill_mode = "NONE"
+        print(obj.data.fill_mode)
+
+
+def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
+    """Helper function to convert curves to grease pencil."""
+    print("convert_to_grease_pencil")
+
+    blend_file = Path(__file__).parent / "blender_assets.blend"
+    node_group_name = "FONT_FILL"
+
+    # Append the node group
+    node_group_dir = str(blend_file) + "/NodeTree/"
+    node_group = db.nodes.append_from_blend(node_group_name, node_group_dir)
+
+    # Print contents
+    # print(f"Nodes in node group '{node_group_name}':")
+    # for node in node_group.nodes:
+    #     print(node.name)
+
+
+
+    gp_collection = db.create_collection(name=f"GP", parent=collection)         
+    for obj in collection.objects:
+        if obj.type != "CURVE":
+            continue
+        obj.data.fill_mode = "NONE"
+
+        bpy.ops.object.grease_pencil_add(type='EMPTY')
+        gp_obj = bpy.context.active_object
+        gp_obj.name = f"GP_{obj.name}"
+        gp_collection.objects.link(gp_obj)
+
+        for coll in gp_obj.users_collection: # todo: make this better
+            if coll != gp_collection:
+                coll.objects.unlink(gp_obj)
+        
+        modifier = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
+        modifier.node_group = node_group
+        modifier["Socket_2"] = obj
 
 def add_indices_to_collection(imported_collection):
     """
@@ -308,6 +356,8 @@ def typst_to_blender_curves(
     origin_to_char: bool = False,
     join_curves: bool = False,
     convert_to_mesh: bool = False,
+    convert_to_unfilled_path: bool = False,
+    use_grease_pencil: bool = False,
     position: Optional[Tuple[float, float, float]] = None,
     show_indices: bool = False,
 ) -> bpy.types.Collection:
@@ -321,6 +371,8 @@ def typst_to_blender_curves(
         origin_to_char (bool, optional): If True, set the origin of each object to its geometry. Defaults to False.
         join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
         convert_to_mesh (bool, optional): If True, convert curves to meshes. Defaults to False.
+        convert_to_unfilled_path (bool, optional): If True, convert curves to unfilled paths. Defaults to False.
+        use_grease_pencil (bool, optional): If True, use grease pencil instead of curves. Defaults to False.
         position (Optional[Tuple[float, float, float]], optional): Position (x,y,z) to place the content. Defaults to None.
         show_indices (bool, optional): If True, add blue text indices with background circles to each object. Defaults to False.
 
@@ -374,6 +426,12 @@ def typst_to_blender_curves(
     if convert_to_mesh:
         _convert_to_meshes(imported_collection)
 
+    if convert_to_unfilled_path:
+        _convert_to_unfilled_paths(imported_collection)
+
+    if use_grease_pencil:
+        _convert_to_grease_pencil(imported_collection)
+
     # Position the collection if coordinates are provided
     if position is not None:
         for obj in imported_collection.objects:
@@ -402,6 +460,8 @@ def typst_express(
     origin_to_char: bool = False,
     join_curves: bool = False,
     convert_to_mesh: bool = True,
+    convert_to_unfilled_path: bool = False,
+    use_grease_pencil: bool = False,
     position: Optional[Tuple[float, float, float]] = None,
     show_indices: bool = False,
 ) -> bpy.types.Collection:
@@ -440,6 +500,8 @@ def typst_express(
         origin_to_char,
         join_curves,
         convert_to_mesh,
+        convert_to_unfilled_path,
+        use_grease_pencil,
         position,
         show_indices,
     )

@@ -95,6 +95,11 @@ for i in range(0,10):
 
 # Changelog
 
+
+## v0.2.1
+
+* Better Grease Pencil support
+
 ## v0.2.0
 
 * Use Typst version 0.14.1 

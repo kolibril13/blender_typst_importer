@@ -43,9 +43,94 @@ from .operators.jump import (
     OBJECT_OT_apply_jump,
 )
 
+from .operators.text_editor_import import (
+    ImportFromTextEditorAsCurveOperator,
+    ImportFromTextEditorAsMeshOperator,
+    ImportFromTextEditorAsGreasePencilOperator,
+)
+
 
 # Global list to store our keymap entries for cleanup.
 addon_keymaps = []
+
+
+# Property to store selected text editor document
+bpy.types.WindowManager.typst_selected_text = bpy.props.StringProperty(
+    name="Selected Text",
+    description="Selected text document from Blender's text editor",
+    default="",
+)
+
+
+# Panel for text editor import
+class VIEW3D_PT_typst_text_editor_import(bpy.types.Panel):
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Typst Tools"
+    bl_label = "Text Editor Import"
+
+    def draw(self, context):
+        layout = self.layout
+        wm = context.window_manager
+        
+        # Get available text documents
+        text_docs = list(bpy.data.texts.keys())
+        
+        if not text_docs:
+            layout.label(text="No text documents found", icon="INFO")
+            layout.label(text="Create one in the Text Editor")
+            return
+        
+        # Text document selector
+        box = layout.box()
+        box.label(text="Select Text Document")
+        box.prop_search(
+            wm,
+            "typst_selected_text",
+            bpy.data,
+            "texts",
+            text="Document",
+            icon="TEXT",
+        )
+        
+        # Show selected text name or placeholder
+        selected_text = wm.typst_selected_text
+        if not selected_text:
+            box.label(text="No document selected", icon="INFO")
+        else:
+            box.label(text=f"Selected: {selected_text}", icon="FILE_TEXT")
+        
+        # Import options
+        box = layout.box()
+        box.label(text="Import Options")
+        
+        # Disable buttons if no text is selected
+        row = box.row()
+        op = row.operator(
+            ImportFromTextEditorAsCurveOperator.bl_idname,
+            text="Import as Curve",
+            icon="CURVE_DATA",
+        )
+        op.text_name = selected_text
+        row.enabled = bool(selected_text)
+        
+        row = box.row()
+        op = row.operator(
+            ImportFromTextEditorAsMeshOperator.bl_idname,
+            text="Import as Mesh",
+            icon="MESH_DATA",
+        )
+        op.text_name = selected_text
+        row.enabled = bool(selected_text)
+        
+        row = box.row()
+        op = row.operator(
+            ImportFromTextEditorAsGreasePencilOperator.bl_idname,
+            text="Import as Grease Pencil",
+            icon="GREASEPENCIL",
+        )
+        op.text_name = selected_text
+        row.enabled = bool(selected_text)
 
 
 # Panel for the N-panel sidebar
@@ -172,6 +257,10 @@ def register():
     bpy.utils.register_class(OBJECT_OT_join_to_plane)
     bpy.utils.register_class(OBJECT_OT_copy_to_plane)
     bpy.utils.register_class(OBJECT_OT_apply_jump)
+    bpy.utils.register_class(ImportFromTextEditorAsCurveOperator)
+    bpy.utils.register_class(ImportFromTextEditorAsMeshOperator)
+    bpy.utils.register_class(ImportFromTextEditorAsGreasePencilOperator)
+    bpy.utils.register_class(VIEW3D_PT_typst_text_editor_import)
 
     # Add menu entries
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
@@ -198,6 +287,10 @@ def unregister():
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
 
     # Unregister Blender classes in reverse order
+    bpy.utils.unregister_class(VIEW3D_PT_typst_text_editor_import)
+    bpy.utils.unregister_class(ImportFromTextEditorAsGreasePencilOperator)
+    bpy.utils.unregister_class(ImportFromTextEditorAsMeshOperator)
+    bpy.utils.unregister_class(ImportFromTextEditorAsCurveOperator)
     bpy.utils.unregister_class(OBJECT_OT_apply_jump)
     bpy.utils.unregister_class(OBJECT_OT_copy_to_plane)
     bpy.utils.unregister_class(OBJECT_OT_join_to_plane)

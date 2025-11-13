@@ -61,6 +61,20 @@ bpy.types.WindowManager.typst_selected_text = bpy.props.StringProperty(
     default="",
 )
 
+# Property for origin to character option
+bpy.types.WindowManager.typst_origin_to_char = bpy.props.BoolProperty(
+    name="Origin to Character",
+    description="Set the origin of each object to its geometry",
+    default=True,
+)
+
+# Property for custom header checkbox
+bpy.types.WindowManager.typst_use_custom_header = bpy.props.BoolProperty(
+    name="Use Custom Header",
+    description="Use default Typst header (page settings and text size). If unchecked, uses the content as-is.",
+    default=True,
+)
+
 
 # Panel for text editor import
 class VIEW3D_PT_typst_text_editor_import(bpy.types.Panel):
@@ -103,6 +117,12 @@ class VIEW3D_PT_typst_text_editor_import(bpy.types.Panel):
         # Import options
         box = layout.box()
         box.label(text="Import Options")
+        
+        # Origin to character option
+        box.prop(wm, "typst_origin_to_char", text="Origin to Character")
+        
+        # Custom header option
+        box.prop(wm, "typst_use_custom_header", text="Use Custom Header")
         
         # Disable buttons if no text is selected
         row = box.row()

@@ -47,6 +47,7 @@ from .operators.text_editor_import import (
     ImportFromTextEditorAsCurveOperator,
     ImportFromTextEditorAsMeshOperator,
     ImportFromTextEditorAsGreasePencilOperator,
+    ImportFromTextEditorAsUnfilledCurveOperator,
 )
 
 
@@ -148,6 +149,15 @@ class VIEW3D_PT_typst_text_editor_import(bpy.types.Panel):
             ImportFromTextEditorAsGreasePencilOperator.bl_idname,
             text="Import as Grease Pencil",
             icon="GREASEPENCIL",
+        )
+        op.text_name = selected_text
+        row.enabled = bool(selected_text)
+        
+        row = box.row()
+        op = row.operator(
+            ImportFromTextEditorAsUnfilledCurveOperator.bl_idname,
+            text="Import as Unfilled Curve",
+            icon="CURVE_BEZCURVE",
         )
         op.text_name = selected_text
         row.enabled = bool(selected_text)
@@ -280,6 +290,7 @@ def register():
     bpy.utils.register_class(ImportFromTextEditorAsCurveOperator)
     bpy.utils.register_class(ImportFromTextEditorAsMeshOperator)
     bpy.utils.register_class(ImportFromTextEditorAsGreasePencilOperator)
+    bpy.utils.register_class(ImportFromTextEditorAsUnfilledCurveOperator)
     bpy.utils.register_class(VIEW3D_PT_typst_text_editor_import)
 
     # Add menu entries
@@ -308,6 +319,7 @@ def unregister():
 
     # Unregister Blender classes in reverse order
     bpy.utils.unregister_class(VIEW3D_PT_typst_text_editor_import)
+    bpy.utils.unregister_class(ImportFromTextEditorAsUnfilledCurveOperator)
     bpy.utils.unregister_class(ImportFromTextEditorAsGreasePencilOperator)
     bpy.utils.unregister_class(ImportFromTextEditorAsMeshOperator)
     bpy.utils.unregister_class(ImportFromTextEditorAsCurveOperator)

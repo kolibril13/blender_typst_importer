@@ -189,38 +189,29 @@ def _convert_to_unfilled_paths(collection: bpy.types.Collection) -> None:
 
 
 def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
-    """Convert curves in a collection to grease pencil objects."""
     print("convert_to_grease_pencil")
 
     blend_file = Path(__file__).parent / "blender_assets.blend"
-    node_group_dir = str(blend_file) + "/NodeTree/"
-    node_group_name = "FONT_FILL"
-    node_group = db.nodes.append_from_blend(node_group_name, node_group_dir)
-
-    from pathlib import Path
-
+    node_group = db.nodes.append_from_blend("FONT_FILL", str(blend_file) + "/NodeTree/")
 
     with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
         data_to.objects = ["GPAsset"]
 
-    obj = bpy.data.objects["GPAsset"]
-
-
+    src_gp = bpy.data.objects["GPAsset"]
 
     for obj in collection.objects:
         if obj.type != "CURVE":
             continue
+
         obj.data.fill_mode = "NONE"
 
-        # Create grease pencil object using the loaded asset
-        gp_obj = obj <- Copy the object, but use same matierals pls!
+        gp_obj = bpy.data.objects.new(f"GP_{obj.name}", src_gp.data.copy())
         gp_obj.location = obj.location
         collection.objects.link(gp_obj)
-        gp_obj.name = f"GP_{obj.name}"
 
-        modifier = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
-        modifier.node_group = node_group
-        modifier["Socket_2"] = obj
+        mod = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
+        mod.node_group = node_group
+        mod["Socket_2"] = obj
 
 
 def add_indices_to_collection(imported_collection):

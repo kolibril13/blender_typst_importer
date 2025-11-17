@@ -128,6 +128,15 @@ class VIEW3D_PT_typst_text_editor_import(bpy.types.Panel):
         # Disable buttons if no text is selected
         row = box.row()
         op = row.operator(
+            ImportFromTextEditorAsUnfilledCurveOperator.bl_idname,
+            text="Import as Unfilled Curve",
+            icon="CURVE_BEZCURVE",
+        )
+        op.text_name = selected_text
+        row.enabled = bool(selected_text)
+        
+        row = box.row()
+        op = row.operator(
             ImportFromTextEditorAsCurveOperator.bl_idname,
             text="Import as Curve",
             icon="CURVE_DATA",
@@ -149,15 +158,6 @@ class VIEW3D_PT_typst_text_editor_import(bpy.types.Panel):
             ImportFromTextEditorAsGreasePencilOperator.bl_idname,
             text="Import as Grease Pencil",
             icon="GREASEPENCIL",
-        )
-        op.text_name = selected_text
-        row.enabled = bool(selected_text)
-        
-        row = box.row()
-        op = row.operator(
-            ImportFromTextEditorAsUnfilledCurveOperator.bl_idname,
-            text="Import as Unfilled Curve",
-            icon="CURVE_BEZCURVE",
         )
         op.text_name = selected_text
         row.enabled = bool(selected_text)

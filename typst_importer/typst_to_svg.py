@@ -197,20 +197,25 @@ def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
     node_group_name = "FONT_FILL"
     node_group = db.nodes.append_from_blend(node_group_name, node_group_dir)
 
-    # Make sure the correct collection is active before adding GP objects
-    bpy.context.view_layer.active_layer_collection = (
-        bpy.context.view_layer.layer_collection.children[collection.name]
-    )
+    from pathlib import Path
+
+
+    with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
+        data_to.objects = ["GPAsset"]
+
+    obj = bpy.data.objects["GPAsset"]
+
+
 
     for obj in collection.objects:
         if obj.type != "CURVE":
             continue
         obj.data.fill_mode = "NONE"
 
-        # Add grease pencil in the active collection
-        bpy.ops.object.grease_pencil_add(type='EMPTY')
-        gp_obj = bpy.context.active_object
-        gp_obj.location = obj.location  
+        # Create grease pencil object using the loaded asset
+        gp_obj = obj <- Copy the object, but use same matierals pls!
+        gp_obj.location = obj.location
+        collection.objects.link(gp_obj)
         gp_obj.name = f"GP_{obj.name}"
 
         modifier = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
@@ -237,7 +242,7 @@ def add_indices_to_collection(imported_collection):
     # Create a new collection for indices if there are multiple objects
     if len(imported_collection.objects) > 1:
         indices_collection = bpy.data.collections.new(
-            f"{imported_collection.name}_Indices"
+            f"{imported_collection.name}_Indice^s"
         )
         # Link the indices collection as a child of the imported_collection instead of scene collection
         imported_collection.children.link(indices_collection)

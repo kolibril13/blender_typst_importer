@@ -210,6 +210,7 @@ def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
         gp_obj = src_gp.copy()
         gp_obj.data = src_gp.data.copy()
         gp_obj.name = f"GP_{obj.name}"
+        gp_obj.data.name = f"GP_{obj.name}DataBlock"
         gp_obj.location = obj.location
         bpy.context.collection.objects.link(gp_obj)
 
@@ -217,7 +218,7 @@ def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
         mod = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
         mod.node_group = node_group_font_fill
         mod["Socket_2"] = obj
-   
+           
 
 def add_indices_to_collection(imported_collection):
     """

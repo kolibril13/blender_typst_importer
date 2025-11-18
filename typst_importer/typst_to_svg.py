@@ -17,6 +17,26 @@ bpy.types.Collection.processed_svg = bpy.props.StringProperty(
 )
 
 
+
+def move_objects(objs, target_collection: bpy.types.Collection) -> None:
+    """Move one or many objects into a target collection.
+
+    objs: list[bpy.types.Object] or a single object
+    """
+
+    # Allow single object
+    if isinstance(objs, bpy.types.Object):
+        objs = [objs]
+
+    for obj in objs:
+        # Unlink from all current collections
+        for c in obj.users_collection:
+            c.objects.unlink(obj)
+
+        # Link to target collection
+        target_collection.objects.link(obj)
+        
+
 # Core object and material setup functions
 def setup_object(obj: bpy.types.Object, scale_factor: float = 200) -> None:
     """Setup individual object properties."""
@@ -198,6 +218,8 @@ def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
 
     node_group_font_fill = bpy.data.node_groups["FONT_FILL"]
     src_gp = bpy.data.objects["GPAsset"]
+    col_gp = db.create_collection(f"GP_{collection.name}", parent=collection)
+    col_curves = db.create_collection(f"curves_{collection.name}", parent=collection)
 
 
 
@@ -212,13 +234,15 @@ def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
         gp_obj.name = f"GP_{obj.name}"
         gp_obj.data.name = f"GP_{obj.name}DataBlock"
         gp_obj.location = obj.location
-        bpy.context.collection.objects.link(gp_obj)
+        col_gp.objects.link(gp_obj)
 
 
         mod = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
         mod.node_group = node_group_font_fill
         mod["Socket_2"] = obj
-           
+        
+    for obj in collection.objects:
+        move_objects(obj, col_curves)       
 
 def add_indices_to_collection(imported_collection):
     """

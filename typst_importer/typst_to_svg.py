@@ -192,12 +192,14 @@ def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
     print("convert_to_grease_pencil")
 
     blend_file = Path(__file__).parent / "blender_assets.blend"
-    node_group = db.nodes.append_from_blend("FONT_FILL", str(blend_file) + "/NodeTree/")
-
     with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
+        data_to.node_groups = ["FONT_FILL"]
         data_to.objects = ["GPAsset"]
 
+    node_group_font_fill = bpy.data.node_groups["FONT_FILL"]
     src_gp = bpy.data.objects["GPAsset"]
+
+
 
     for obj in collection.objects:
         if obj.type != "CURVE":
@@ -205,14 +207,17 @@ def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
 
         obj.data.fill_mode = "NONE"
 
-        gp_obj = bpy.data.objects.new(f"GP_{obj.name}", src_gp.data.copy())
+        gp_obj = src_gp.copy()
+        gp_obj.data = src_gp.data.copy()
+        gp_obj.name = f"GP_{obj.name}"
         gp_obj.location = obj.location
-        collection.objects.link(gp_obj)
+        bpy.context.collection.objects.link(gp_obj)
+
 
         mod = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
-        mod.node_group = node_group
+        mod.node_group = node_group_font_fill
         mod["Socket_2"] = obj
-
+   
 
 def add_indices_to_collection(imported_collection):
     """

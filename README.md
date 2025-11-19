@@ -12,7 +12,11 @@ https://www.youtube.com/watch?v=IYveJn5M3TA
 
 ## Usage
 
+![shapes at 25-11-18 14 03 14](https://github.com/user-attachments/assets/00f1a3df-f9a7-4f79-91ad-d1961148981f)
 
+![shapes at 25-11-18 14 03 25](https://github.com/user-attachments/assets/0112e508-4a84-4a28-a441-325f2059270f)
+
+![shapes at 25-11-18 14 03 39](https://github.com/user-attachments/assets/3584e624-873d-4926-a77d-4bbb94f27114)
 
 # Python API
 

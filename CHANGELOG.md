@@ -2,11 +2,15 @@
 
 # Changelog
 
+
+## v0.2.3
+Update version
+
 ## v0.2.2
 
 * Update to typst version 0.14.4
   https://github.com/messense/typst-py/releases/tag/v0.14.4
-  
+
 
 ## v0.2.1
 

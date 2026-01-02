@@ -2,6 +2,11 @@
 
 # Changelog
 
+## v0.2.4
+
+* update typst https://github.com/messense/typst-py/releases/tag/v0.14.5
+* Full blender 5.0 support
+
 
 ## v0.2.3
 Update version

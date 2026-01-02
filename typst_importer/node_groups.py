@@ -66,7 +66,10 @@ def create_follow_curve_node_group():
 
     transform_geometry = follow_path.nodes.new("GeometryNodeTransform")
     transform_geometry.name = "Transform Geometry"
-    transform_geometry.mode = "COMPONENTS"
+    if bpy.app.version >= (5, 0, 0):
+        transform_geometry.inputs[1].default_value = 'Components'
+    else:
+        transform_geometry.mode = "COMPONENTS"
     transform_geometry.inputs[2].default_value = (0.0, 0.0, 0.0)  # Rotation
     transform_geometry.inputs[3].default_value = (1.0, 1.0, 1.0)  # Scale
 

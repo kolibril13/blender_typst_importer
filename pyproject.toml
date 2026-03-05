@@ -5,7 +5,7 @@ description = "Blender extension to render Typst files"
 license = { text = "AGPL-3.0-or-later" }
 readme = "README.md"
 dependencies = ["typst", "svg.path" , "lxml", "databpy"]
-requires-python = ">=3.11.0,<3.12"
+requires-python = ">=3.11.0"
 keywords = ["blender", "python", "typst"]
 maintainers = [
     { name = "Jan-Hendrik Müller", email = "jan-hendrik.mueller@uni-goettingen.de" }

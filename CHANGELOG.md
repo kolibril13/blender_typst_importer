@@ -2,8 +2,9 @@
 
 # Changelog
 
-## v0.2.5
+## v0.3.0
 
+Python 3.13, and Blender 5.1
 Typst typst-0.14.8
 
 ## v0.2.4

@@ -73,7 +73,7 @@ def remove_whls():
 def download_whls(
     platforms: Union[Platform, List[Platform]],
     required_packages: List[str] = required_packages,
-    python_version="3.11",
+    python_version = "3.13",
     clean: bool = True,
 ):
     if isinstance(platforms, Platform):

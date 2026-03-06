@@ -45,6 +45,11 @@ from .operators.text_editor_import import (
     ImportFromTextEditorAsUnfilledCurveOperator,
 )
 
+from .operators.export_svg import (
+    ExportTypstSvgOperator,
+    DEFAULT_EXPORT_PATH,
+)
+
 
 # Global list to store our keymap entries for cleanup.
 addon_keymaps = []
@@ -69,6 +74,14 @@ bpy.types.WindowManager.typst_use_custom_header = bpy.props.BoolProperty(
     name="Use Custom Header",
     description="Use default Typst header (page settings and text size). If unchecked, uses the content as-is.",
     default=True,
+)
+
+# Property for SVG export path (default: user's Downloads folder)
+bpy.types.WindowManager.typst_export_filepath = bpy.props.StringProperty(
+    name="Export Path",
+    description="Path to save the exported SVG",
+    default=DEFAULT_EXPORT_PATH,
+    subtype="FILE_PATH",
 )
 
 
@@ -233,6 +246,36 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
         )
 
 
+# Export panel (appears last in Typst Tools)
+class VIEW3D_PT_typst_export(bpy.types.Panel):
+    bl_space_type = "VIEW_3D"
+    bl_region_type = "UI"
+    bl_category = "Typst Tools"
+    bl_label = "Export"
+    bl_order = 20  # After other panels
+
+    def draw(self, context):
+        layout = self.layout
+        wm = context.window_manager
+        if not wm.typst_export_filepath:
+            wm.typst_export_filepath = DEFAULT_EXPORT_PATH
+
+        box = layout.box()
+        box.label(text="Export SVG")
+        box.prop(wm, "typst_export_filepath", text="", icon="FILE_TICK")
+        op = box.operator(
+            ExportTypstSvgOperator.bl_idname,
+            text="Export SVG",
+            icon="EXPORT",
+        )
+        op.filepath = wm.typst_export_filepath
+        has_svg = bool(getattr(context.scene, "typst_last_processed_svg", None))
+        if has_svg:
+            layout.label(text="Ready: last imported SVG available", icon="CHECKMARK")
+        else:
+            layout.label(text="Import Typst content first", icon="INFO")
+
+
 def menu_func_import(self, context):
     """Add an entry into the File > Import menu."""
     self.layout.operator(ImportTypstOperator.bl_idname, text="Typst 🦢 via (.txt/.typ)")
@@ -266,6 +309,8 @@ def register():
     bpy.utils.register_class(ImportFromTextEditorAsMeshOperator)
     bpy.utils.register_class(ImportFromTextEditorAsUnfilledCurveOperator)
     bpy.utils.register_class(VIEW3D_PT_typst_text_editor_import)
+    bpy.utils.register_class(ExportTypstSvgOperator)
+    bpy.utils.register_class(VIEW3D_PT_typst_export)
 
     # Add menu entries
     bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
@@ -292,6 +337,8 @@ def unregister():
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
 
     # Unregister Blender classes in reverse order
+    bpy.utils.unregister_class(VIEW3D_PT_typst_export)
+    bpy.utils.unregister_class(ExportTypstSvgOperator)
     bpy.utils.unregister_class(VIEW3D_PT_typst_text_editor_import)
     bpy.utils.unregister_class(ImportFromTextEditorAsUnfilledCurveOperator)
     bpy.utils.unregister_class(ImportFromTextEditorAsMeshOperator)

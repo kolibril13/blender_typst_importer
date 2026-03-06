@@ -16,6 +16,12 @@ bpy.types.Collection.processed_svg = bpy.props.StringProperty(
     description="Processed SVG content from Typst",
 )
 
+# Store the most recently generated processed SVG on the scene for easy export
+bpy.types.Scene.typst_last_processed_svg = bpy.props.StringProperty(
+    name="Last Processed SVG",
+    description="Most recently generated processed SVG from Typst",
+)
+
 
 
 def move_objects(objs, target_collection: bpy.types.Collection) -> None:
@@ -388,6 +394,9 @@ def typst_to_blender_curves(
 
     imported_collection.name = f"Typst_{file_name_without_ext}"
     imported_collection.processed_svg = processed_svg
+
+    # Also store on the scene so the Export panel can always access the latest SVG
+    bpy.context.scene.typst_last_processed_svg = processed_svg
 
     # Setup objects and materials
     for obj in imported_collection.objects:

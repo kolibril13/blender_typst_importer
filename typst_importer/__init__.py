@@ -39,10 +39,6 @@ from .operators.utility import (
     OBJECT_OT_copy_without_keyframes,
 )
 
-from .operators.jump import (
-    OBJECT_OT_apply_jump,
-)
-
 from .operators.text_editor_import import (
     ImportFromTextEditorAsCurveOperator,
     ImportFromTextEditorAsMeshOperator,
@@ -193,16 +189,6 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
             icon="FORCE_CURVE",
         )
 
-        # Jump tools (properly added as its own section)
-        box = layout.box()
-        box.label(text="Jump")
-        row = box.row(align=True)
-        row.operator(
-            OBJECT_OT_apply_jump.bl_idname,
-            text="Make a Jump",
-            icon="OUTLINER_OB_EMPTY",  # Use a distinct icon (optional: change as needed)
-        )
-
         # Visibility tools
         box = layout.box()
         box.label(text="Visibility")
@@ -276,7 +262,6 @@ def register():
     bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
     bpy.utils.register_class(OBJECT_OT_join_to_plane)
     bpy.utils.register_class(OBJECT_OT_copy_to_plane)
-    bpy.utils.register_class(OBJECT_OT_apply_jump)
     bpy.utils.register_class(ImportFromTextEditorAsCurveOperator)
     bpy.utils.register_class(ImportFromTextEditorAsMeshOperator)
     bpy.utils.register_class(ImportFromTextEditorAsUnfilledCurveOperator)
@@ -311,7 +296,6 @@ def unregister():
     bpy.utils.unregister_class(ImportFromTextEditorAsUnfilledCurveOperator)
     bpy.utils.unregister_class(ImportFromTextEditorAsMeshOperator)
     bpy.utils.unregister_class(ImportFromTextEditorAsCurveOperator)
-    bpy.utils.unregister_class(OBJECT_OT_apply_jump)
     bpy.utils.unregister_class(OBJECT_OT_copy_to_plane)
     bpy.utils.unregister_class(OBJECT_OT_join_to_plane)
     bpy.utils.unregister_class(VIEW3D_PT_typst_animation_tools)

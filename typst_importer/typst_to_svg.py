@@ -208,42 +208,6 @@ def _convert_to_unfilled_paths(collection: bpy.types.Collection) -> None:
         print(obj.data.fill_mode)
 
 
-def _convert_to_grease_pencil(collection: bpy.types.Collection) -> None:
-    print("convert_to_grease_pencil")
-
-    blend_file = Path(__file__).parent / "blender_assets.blend"
-    with bpy.data.libraries.load(str(blend_file), link=False) as (data_from, data_to):
-        data_to.node_groups = ["FONT_FILL"]
-        data_to.objects = ["GPAsset"]
-
-    node_group_font_fill = bpy.data.node_groups["FONT_FILL"]
-    src_gp = bpy.data.objects["GPAsset"]
-    col_gp = db.create_collection(f"GP_{collection.name}", parent=collection)
-    col_curves = db.create_collection(f"curves_{collection.name}", parent=collection)
-
-
-
-    for obj in collection.objects:
-        if obj.type != "CURVE":
-            continue
-
-        obj.data.fill_mode = "NONE"
-
-        gp_obj = src_gp.copy()
-        gp_obj.data = src_gp.data.copy()
-        gp_obj.name = f"GP_{obj.name}"
-        gp_obj.data.name = f"GP_{obj.name}DataBlock"
-        gp_obj.location = obj.location
-        col_gp.objects.link(gp_obj)
-
-
-        mod = gp_obj.modifiers.new(name="GeoNodes", type='NODES')
-        mod.node_group = node_group_font_fill
-        mod["Socket_2"] = obj
-        
-    for obj in collection.objects:
-        move_objects(obj, col_curves)       
-
 def add_indices_to_collection(imported_collection):
     """
     Add index labels to objects in a collection.
@@ -376,7 +340,6 @@ def typst_to_blender_curves(
     join_curves: bool = False,
     convert_to_mesh: bool = False,
     convert_to_unfilled_path: bool = False,
-    use_grease_pencil: bool = False,
     position: Optional[Tuple[float, float, float]] = None,
     show_indices: bool = False,
 ) -> bpy.types.Collection:
@@ -391,7 +354,6 @@ def typst_to_blender_curves(
         join_curves (bool, optional): If True, join all curves into a single object. Defaults to False.
         convert_to_mesh (bool, optional): If True, convert curves to meshes. Defaults to False.
         convert_to_unfilled_path (bool, optional): If True, convert curves to unfilled paths. Defaults to False.
-        use_grease_pencil (bool, optional): If True, use grease pencil instead of curves. Defaults to False.
         position (Optional[Tuple[float, float, float]], optional): Position (x,y,z) to place the content. Defaults to None.
         show_indices (bool, optional): If True, add blue text indices with background circles to each object. Defaults to False.
 
@@ -448,9 +410,6 @@ def typst_to_blender_curves(
     if convert_to_unfilled_path:
         _convert_to_unfilled_paths(imported_collection)
 
-    if use_grease_pencil:
-        _convert_to_grease_pencil(imported_collection)
-
     # Position the collection if coordinates are provided
     if position is not None:
         for obj in imported_collection.objects:
@@ -480,7 +439,6 @@ def typst_express(
     join_curves: bool = False,
     convert_to_mesh: bool = True,
     convert_to_unfilled_path: bool = False,
-    use_grease_pencil: bool = False,
     position: Optional[Tuple[float, float, float]] = None,
     show_indices: bool = False,
 ) -> bpy.types.Collection:
@@ -520,7 +478,6 @@ def typst_express(
         join_curves,
         convert_to_mesh,
         convert_to_unfilled_path,
-        use_grease_pencil,
         position,
         show_indices,
     )

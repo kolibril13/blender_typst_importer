@@ -88,7 +88,6 @@ class ImportFromTextEditorAsCurveOperator(ImportFromTextEditorOperator):
         return typst_to_blender_curves(
             typst_file,
             convert_to_mesh=False,
-            use_grease_pencil=False,
             origin_to_char=origin_to_char,
         )
 
@@ -102,21 +101,6 @@ class ImportFromTextEditorAsMeshOperator(ImportFromTextEditorOperator):
         return typst_to_blender_curves(
             typst_file,
             convert_to_mesh=True,
-            use_grease_pencil=False,
-            origin_to_char=origin_to_char,
-        )
-
-
-class ImportFromTextEditorAsGreasePencilOperator(ImportFromTextEditorOperator):
-    """Import text editor document as grease pencil"""
-    bl_idname = "import_scene.import_text_editor_grease_pencil"
-    bl_label = "Import from Text Editor as Grease Pencil"
-    
-    def import_typst(self, typst_file: Path, origin_to_char: bool = False):
-        return typst_to_blender_curves(
-            typst_file,
-            convert_to_mesh=False,
-            use_grease_pencil=True,
             origin_to_char=origin_to_char,
         )
 
@@ -130,7 +114,6 @@ class ImportFromTextEditorAsUnfilledCurveOperator(ImportFromTextEditorOperator):
         return typst_to_blender_curves(
             typst_file,
             convert_to_mesh=False,
-            use_grease_pencil=False,
             convert_to_unfilled_path=True,
             origin_to_char=origin_to_char,
         )

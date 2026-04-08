@@ -18,7 +18,9 @@ ADDON_NAME = "typst_importer"
 TOML_PATH = f"./{ADDON_NAME}/blender_manifest.toml"
 WHL_PATH = f"./{ADDON_NAME}/wheels"
 
+# Instead of reading from pyproject.toml, define the required packages here:
 required_packages = ["typst", "databpy" ,"svg.path" , "lxml"] 
+
 def run_python(args: str | List[str]):
     python = os.path.realpath(sys.executable)
 

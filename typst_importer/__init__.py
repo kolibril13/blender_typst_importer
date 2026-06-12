@@ -39,10 +39,10 @@ from .operators.utility import (
     OBJECT_OT_copy_without_keyframes,
 )
 
-from .operators.text_editor_import import (
-    ImportFromTextEditorAsCurveOperator,
-    ImportFromTextEditorAsMeshOperator,
-    ImportFromTextEditorAsUnfilledCurveOperator,
+from .operators.textbox_import import (
+    ImportFromTextboxAsCurveOperator,
+    ImportFromTextboxAsMeshOperator,
+    ImportFromTextboxAsUnfilledCurveOperator,
 )
 
 from .operators.export_svg import (
@@ -55,10 +55,10 @@ from .operators.export_svg import (
 addon_keymaps = []
 
 
-# Property to store selected text editor document
-bpy.types.WindowManager.typst_selected_text = bpy.props.StringProperty(
-    name="Selected Text",
-    description="Selected text document from Blender's text editor",
+# Property to store the Typst content entered in the textbox
+bpy.types.Scene.typst_text = bpy.props.StringProperty(
+    name="Typst Text",
+    description="Typst content to import",
     default="",
 )
 
@@ -85,81 +85,58 @@ bpy.types.WindowManager.typst_export_filepath = bpy.props.StringProperty(
 )
 
 
-# Panel for text editor import
-class VIEW3D_PT_typst_text_editor_import(bpy.types.Panel):
+# Panel for textbox import
+class VIEW3D_PT_typst_textbox_import(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Typst Tools"
-    bl_label = "Text Editor Import"
+    bl_label = "Typst Input"
 
     def draw(self, context):
         layout = self.layout
         wm = context.window_manager
-        
-        # Get available text documents
-        text_docs = list(bpy.data.texts.keys())
-        
-        if not text_docs:
-            layout.label(text="No text documents found", icon="INFO")
-            layout.label(text="Create one in the Text Editor")
-            return
-        
-        # Text document selector
+        scene = context.scene
+
+        # Multi-line textbox for Typst content
         box = layout.box()
-        box.label(text="Select Text Document")
-        box.prop_search(
-            wm,
-            "typst_selected_text",
-            bpy.data,
-            "texts",
-            text="Document",
-            icon="TEXT",
-        )
-        
-        # Show selected text name or placeholder
-        selected_text = wm.typst_selected_text
-        if not selected_text:
-            box.label(text="No document selected", icon="INFO")
-        else:
-            box.label(text=f"Selected: {selected_text}", icon="FILE_TEXT")
-        
+        box.label(text="Typst Content")
+        box.textbox(scene, "typst_text")
+
         # Import options
         box = layout.box()
         box.label(text="Import Options")
-        
+
         # Origin to character option
         box.prop(wm, "typst_origin_to_char", text="Origin to Character")
-        
+
         # Custom header option
         box.prop(wm, "typst_use_custom_header", text="Use Custom Header")
-        
-        # Disable buttons if no text is selected
+
+        # Disable buttons if the textbox is empty
+        has_content = bool(scene.typst_text.strip())
         row = box.row()
-        op = row.operator(
-            ImportFromTextEditorAsUnfilledCurveOperator.bl_idname,
+        row.operator(
+            ImportFromTextboxAsUnfilledCurveOperator.bl_idname,
             text="Import as Unfilled Curve",
             icon="CURVE_BEZCURVE",
         )
-        op.text_name = selected_text
-        row.enabled = bool(selected_text)
-        
+        row.enabled = has_content
+
         row = box.row()
-        op = row.operator(
-            ImportFromTextEditorAsCurveOperator.bl_idname,
+        row.operator(
+            ImportFromTextboxAsCurveOperator.bl_idname,
             text="Import as Curve",
             icon="CURVE_DATA",
         )
-        op.text_name = selected_text
-        row.enabled = bool(selected_text)
-        
+        row.enabled = has_content
+
         row = box.row()
-        op = row.operator(
-            ImportFromTextEditorAsMeshOperator.bl_idname,
+        row.operator(
+            ImportFromTextboxAsMeshOperator.bl_idname,
             text="Import as Mesh",
             icon="MESH_DATA",
         )
-        op.text_name = selected_text
-        row.enabled = bool(selected_text)
+        row.enabled = has_content
 
 
 # Panel for the N-panel sidebar
@@ -305,10 +282,10 @@ def register():
     bpy.utils.register_class(VIEW3D_PT_typst_animation_tools)
     bpy.utils.register_class(OBJECT_OT_join_to_plane)
     bpy.utils.register_class(OBJECT_OT_copy_to_plane)
-    bpy.utils.register_class(ImportFromTextEditorAsCurveOperator)
-    bpy.utils.register_class(ImportFromTextEditorAsMeshOperator)
-    bpy.utils.register_class(ImportFromTextEditorAsUnfilledCurveOperator)
-    bpy.utils.register_class(VIEW3D_PT_typst_text_editor_import)
+    bpy.utils.register_class(ImportFromTextboxAsCurveOperator)
+    bpy.utils.register_class(ImportFromTextboxAsMeshOperator)
+    bpy.utils.register_class(ImportFromTextboxAsUnfilledCurveOperator)
+    bpy.utils.register_class(VIEW3D_PT_typst_textbox_import)
     bpy.utils.register_class(ExportTypstSvgOperator)
     bpy.utils.register_class(VIEW3D_PT_typst_export)
 
@@ -339,10 +316,10 @@ def unregister():
     # Unregister Blender classes in reverse order
     bpy.utils.unregister_class(VIEW3D_PT_typst_export)
     bpy.utils.unregister_class(ExportTypstSvgOperator)
-    bpy.utils.unregister_class(VIEW3D_PT_typst_text_editor_import)
-    bpy.utils.unregister_class(ImportFromTextEditorAsUnfilledCurveOperator)
-    bpy.utils.unregister_class(ImportFromTextEditorAsMeshOperator)
-    bpy.utils.unregister_class(ImportFromTextEditorAsCurveOperator)
+    bpy.utils.unregister_class(VIEW3D_PT_typst_textbox_import)
+    bpy.utils.unregister_class(ImportFromTextboxAsUnfilledCurveOperator)
+    bpy.utils.unregister_class(ImportFromTextboxAsMeshOperator)
+    bpy.utils.unregister_class(ImportFromTextboxAsCurveOperator)
     bpy.utils.unregister_class(OBJECT_OT_copy_to_plane)
     bpy.utils.unregister_class(OBJECT_OT_join_to_plane)
     bpy.utils.unregister_class(VIEW3D_PT_typst_animation_tools)

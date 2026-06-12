@@ -2,6 +2,11 @@
 
 # Changelog
 
+## v0.3.1
+
+* Update to typst 0.14.9
+  https://github.com/messense/typst-py/releases/tag/v0.14.9
+
 ## v0.3.0
 
 Python 3.13, and Blender 5.1

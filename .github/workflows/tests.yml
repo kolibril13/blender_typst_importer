@@ -13,7 +13,7 @@ jobs:
             max-parallel: 4
             fail-fast: false
             matrix:
-              version: ["5.1", "daily"]
+              version: ["5.2", "daily"]
               os: [macos-latest, windows-latest, ubuntu-latest]
         steps:
             - uses: actions/checkout@v5

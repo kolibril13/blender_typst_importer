@@ -20,7 +20,7 @@ tags = [
 	"Geometry Nodes",
 	"Import-Export",
 ]
-blender_version_min = "4.2.0"
+blender_version_min = "5.2.0"
 
 copyright = [
 	"2025 Jan-Hendrik Müller",

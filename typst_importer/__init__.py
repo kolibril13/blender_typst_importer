@@ -1,4 +1,3 @@
-from .utils import add_current_module_to_path
 import bpy
 
 
@@ -259,9 +258,6 @@ def menu_func_import(self, context):
 
 
 def register():
-    # Add the current module to Python's path to ensure imports work correctly
-    add_current_module_to_path()
-
     # Register Blender classes
     bpy.utils.register_class(OBJECT_OT_align_to_active)
     bpy.utils.register_class(OBJECT_OT_align_collection)

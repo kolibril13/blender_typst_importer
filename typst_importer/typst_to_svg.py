@@ -6,6 +6,7 @@ from mathutils import Matrix
 import bpy
 import typst
 import databpy as db
+from nodebpy import shader as s
 
 from .node_groups import (
     DEFAULT_GREASE_PENCIL_STROKE_RADIUS,
@@ -72,40 +73,23 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     mat.use_nodes = True
     mat.blend_method = "BLEND"
 
-    nodes = mat.node_tree.nodes
-    links = mat.node_tree.links
+    mat.node_tree.nodes.clear()
+    with s.tree(mat.node_tree, arrange=None) as tree:
+        opacity = s.Attribute.object("opacity")
+        mixed = s.MixShader(
+            fac=opacity.o.fac,
+            shader=s.TransparentBSDF(),
+            shader_001=s.Emission(color=color, strength=1.0),
+        )
+        s.MaterialOutput(surface=mixed, is_active_output=True)
 
-    nodes.clear()
-
-    # Create necessary nodes
-    transparent = nodes.new(type="ShaderNodeBsdfTransparent")
-    emission = nodes.new(type="ShaderNodeEmission")
-    mix_shader = nodes.new(type="ShaderNodeMixShader")
-    output = nodes.new(type="ShaderNodeOutputMaterial")
-
-    attr_node = nodes.new("ShaderNodeAttribute")
-    attr_node.attribute_name = "opacity"
-    attr_node.attribute_type = "OBJECT"
-
-    # Set node positions
-    attr_node.location = (-300, 300)
-    transparent.location = (-300, 100)
-
-    emission.location = (-300, 0)
-    mix_shader.location = (0, 100)
-    output.location = (300, 100)
-
-    # Set Emission color
-    emission.inputs[0].default_value = color  # Use the provided color
-    emission.inputs[1].default_value = 1.0  # Emission strength
-
-    # Link nodes
-    links.new(transparent.outputs[0], mix_shader.inputs[1])
-    links.new(emission.outputs[0], mix_shader.inputs[2])
-    links.new(mix_shader.outputs[0], output.inputs[0])
-    links.new(
-        attr_node.outputs["Fac"], mix_shader.inputs[0]
-    )  # Use object opacity attribute
+        tree.node_positions = {
+            "Attribute": (-300, 300),
+            "Transparent BSDF": (-300, 100),
+            "Emission": (-300, 0),
+            "Mix Shader": (0, 100),
+            "Material Output": (300, 100),
+        }
 
     return mat
 
@@ -454,30 +438,16 @@ def add_indices_to_collection(imported_collection):
 
                 # Set up material for transparency
                 bg_mat.use_nodes = True
-                nodes = bg_mat.node_tree.nodes
-                links = bg_mat.node_tree.links
-
-                # Clear existing nodes
-                for node in nodes:
-                    nodes.remove(node)
-
-                # Create necessary nodes
-                output_node = nodes.new(type="ShaderNodeOutputMaterial")
-                output_node.location = (400, 0)
-
-                principled_node = nodes.new(type="ShaderNodeBsdfPrincipled")
-                principled_node.location = (0, 0)
-                principled_node.inputs["Base Color"].default_value = (
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                )
-                principled_node.inputs["Alpha"].default_value = 0.2
-
-                links.new(
-                    principled_node.outputs["BSDF"], output_node.inputs["Surface"]
-                )
+                bg_mat.node_tree.nodes.clear()
+                with s.tree(bg_mat.node_tree, arrange=None) as tree:
+                    principled = s.PrincipledBSDF(
+                        base_color=(1.0, 1.0, 1.0, 1.0), alpha=0.2
+                    )
+                    s.MaterialOutput(surface=principled, is_active_output=True)
+                    tree.node_positions = {
+                        "Principled BSDF": (0, 0),
+                        "Material Output": (400, 0),
+                    }
 
                 # Enable transparency settings for Eevee
                 bg_mat.blend_method = "BLEND"

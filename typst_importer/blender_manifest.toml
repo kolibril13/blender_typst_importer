@@ -27,6 +27,7 @@ copyright = [
 ]
 wheels = [
 	"./wheels/databpy-0.7.0-py3-none-any.whl",
+	"./wheels/nodebpy-520.5.2-py3-none-any.whl",
 	"./wheels/lxml-6.0.2-cp313-cp313-macosx_10_13_universal2.whl",
 	"./wheels/lxml-6.0.2-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.whl",
 	"./wheels/lxml-6.0.2-cp313-cp313-win_amd64.whl",

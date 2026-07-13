@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import bpy
 import pytest
 
 import typst_importer
+from typst_importer.operators import textbox_import
 from typst_importer.node_groups import (
     create_follow_curve_node_group,
     modifier_input,
@@ -144,6 +146,27 @@ def test_textbox_curve_importer_smoke_test(tmp_path: Path):
 
     assert collection.objects
     assert {obj.type for obj in collection.objects} == {"CURVE"}
+
+
+def test_textbox_import_prepends_the_header_displayed_in_the_panel():
+    captured = {}
+
+    def fake_typst_import(typst_file, **_kwargs):
+        captured["content"] = typst_file.read_text()
+        return SimpleNamespace(name="Test Collection")
+
+    bpy.context.scene.typst_text = "#text[Hello]"
+    bpy.context.window_manager.typst_use_custom_header = True
+    bpy.context.window_manager.typst_custom_header = "#set text(size: 24pt)\n"
+
+    operator = SimpleNamespace(
+        import_typst=lambda typst_file, _origin_to_char: fake_typst_import(typst_file),
+        report=lambda _level, _message: None,
+    )
+    result = textbox_import.ImportFromTextboxOperator.execute(operator, bpy.context)
+
+    assert result == {"FINISHED"}
+    assert captured["content"] == "#set text(size: 24pt)\n#text[Hello]"
 
 
 def test_addon_registers_and_unregisters_cleanly():

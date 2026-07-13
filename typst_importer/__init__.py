@@ -39,6 +39,7 @@ from .operators.utility import (
 )
 
 from .operators.textbox_import import (
+    DEFAULT_CUSTOM_HEADER,
     ImportFromTextboxAsCurveOperator,
     ImportFromTextboxAsGreasePencilOperator,
     ImportFromTextboxAsMeshOperator,
@@ -72,8 +73,15 @@ bpy.types.WindowManager.typst_origin_to_char = bpy.props.BoolProperty(
 # Property for custom header checkbox
 bpy.types.WindowManager.typst_use_custom_header = bpy.props.BoolProperty(
     name="Use Custom Header",
-    description="Use default Typst header (page settings and text size). If unchecked, uses the content as-is.",
+    description="Prepend the custom Typst header below. If unchecked, use the content as-is.",
     default=True,
+)
+
+# The header prepended to textbox imports when enabled above.
+bpy.types.WindowManager.typst_custom_header = bpy.props.StringProperty(
+    name="Custom Header",
+    description="Typst code prepended to the textbox content before importing",
+    default=DEFAULT_CUSTOM_HEADER,
 )
 
 # Property for SVG export path (default: user's Downloads folder)
@@ -91,6 +99,7 @@ class VIEW3D_PT_typst_textbox_import(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "Typst Tools"
     bl_label = "Typst Input"
+    bl_order = 0
 
     def draw(self, context):
         layout = self.layout
@@ -103,18 +112,28 @@ class VIEW3D_PT_typst_textbox_import(bpy.types.Panel):
         box.textbox(scene, "typst_text")
 
         # Import options
-        box = layout.box()
-        box.label(text="Import Options")
+        options_box = layout.box()
+        options_box.label(text="Import Options")
 
         # Origin to character option
-        box.prop(wm, "typst_origin_to_char", text="Origin to Character")
+        options_box.prop(wm, "typst_origin_to_char", text="Origin to Character")
 
         # Custom header option
-        box.prop(wm, "typst_use_custom_header", text="Use Custom Header")
+        options_box.prop(wm, "typst_use_custom_header", text="Use Custom Header")
+
+        header, header_body = layout.panel(
+            "typst_custom_header",
+            default_closed=True,
+        )
+        header.enabled = wm.typst_use_custom_header
+        header.label(text="Custom Header", icon="TEXT")
+        if header_body and wm.typst_use_custom_header:
+            header_body.textbox(wm, "typst_custom_header")
 
         # Disable buttons if the textbox is empty
         has_content = bool(scene.typst_text.strip())
-        row = box.row()
+        import_box = layout.box()
+        row = import_box.row()
         row.operator(
             ImportFromTextboxAsUnfilledCurveOperator.bl_idname,
             text="Import as Unfilled Curve",
@@ -122,7 +141,7 @@ class VIEW3D_PT_typst_textbox_import(bpy.types.Panel):
         )
         row.enabled = has_content
 
-        row = box.row()
+        row = import_box.row()
         row.operator(
             ImportFromTextboxAsCurveOperator.bl_idname,
             text="Import as Curve",
@@ -130,19 +149,19 @@ class VIEW3D_PT_typst_textbox_import(bpy.types.Panel):
         )
         row.enabled = has_content
 
-        row = box.row()
-        row.operator(
-            ImportFromTextboxAsGreasePencilOperator.bl_idname,
-            text="Import as Grease Pencil",
-            icon="GREASEPENCIL",
-        )
-        row.enabled = has_content
-
-        row = box.row()
+        row = import_box.row()
         row.operator(
             ImportFromTextboxAsMeshOperator.bl_idname,
             text="Import as Mesh",
             icon="MESH_DATA",
+        )
+        row.enabled = has_content
+
+        row = import_box.row()
+        row.operator(
+            ImportFromTextboxAsGreasePencilOperator.bl_idname,
+            text="Import as Grease Pencil",
+            icon="GREASEPENCIL",
         )
         row.enabled = has_content
 
@@ -152,7 +171,8 @@ class VIEW3D_PT_typst_animation_tools(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
     bl_category = "Typst Tools"
-    bl_label = "Animation Tools"
+    bl_label = "Tools"
+    bl_order = 10
 
     def draw(self, context):
         layout = self.layout

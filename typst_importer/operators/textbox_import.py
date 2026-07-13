@@ -6,6 +6,11 @@ import time
 from ..typst_to_svg import typst_to_blender_curves
 
 
+DEFAULT_CUSTOM_HEADER = """#set page(width: auto, height: auto, margin: 0cm, fill: none)
+#set text(size: 50pt)
+"""
+
+
 class ImportFromTextboxOperator(bpy.types.Operator):
     """Base operator for importing from the textbox"""
     bl_options = {"REGISTER", "UNDO"}
@@ -24,10 +29,8 @@ class ImportFromTextboxOperator(bpy.types.Operator):
 
         # Apply custom header if checkbox is checked
         if use_custom_header:
-            default_header = """#set page(width: auto, height: auto, margin: 0cm, fill: none)
-#set text(size: 50pt)
-"""
-            final_content = default_header + text_content
+            custom_header = getattr(wm, "typst_custom_header", DEFAULT_CUSTOM_HEADER)
+            final_content = custom_header + text_content
         else:
             final_content = text_content
 

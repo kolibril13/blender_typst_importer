@@ -26,10 +26,12 @@ jobs:
             - name: Run Tests in Blender
               run: blender -b -P tests/run.py -- -vv tests --cov --cov-report=xml
             - name: Build and validate extension
+              shell: bash
               run: |
-                mkdir -p build
-                blender --factory-startup --command extension build --source-dir typst_importer --output-dir build
-                blender --factory-startup --command extension validate build/*.zip
+                blender -b -P build.py
+                for archive in typst_importer-*.zip; do
+                  blender --factory-startup --command extension validate "$archive"
+                done
     
 
     

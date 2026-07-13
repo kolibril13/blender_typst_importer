@@ -1,5 +1,9 @@
 import bpy
-from ..node_groups import visibility_node_group
+from ..node_groups import (
+    modifier_input_data_path,
+    set_modifier_input_value,
+    visibility_node_group,
+)
 from .op_utils import get_or_create_collection
 
 
@@ -27,18 +31,23 @@ def toggle_visibility(obj, current_frame, make_visible):
         visibility_modifier = obj.modifiers.new(name="Visibility", type="NODES")
         visibility_modifier.node_group = visibility_node_group()
 
+    visibility_data_path = modifier_input_data_path(
+        visibility_modifier,
+        "Visibility",
+    )
+
     # Set initial state at current frame
     initial_state = not make_visible
-    visibility_modifier["Socket_2"] = initial_state
-    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame-1)
+    set_modifier_input_value(visibility_modifier, "Visibility", initial_state)
+    obj.keyframe_insert(visibility_data_path, frame=current_frame - 1)
 
     # Set target state at next frame
     target_state = make_visible
-    visibility_modifier["Socket_2"] = target_state
-    obj.keyframe_insert('modifiers["Visibility"]["Socket_2"]', frame=current_frame)
+    set_modifier_input_value(visibility_modifier, "Visibility", target_state)
+    obj.keyframe_insert(visibility_data_path, frame=current_frame)
 
     # Reset to initial state for display
-    visibility_modifier["Socket_2"] = initial_state
+    set_modifier_input_value(visibility_modifier, "Visibility", initial_state)
     return visibility_modifier
 
 
@@ -90,7 +99,7 @@ class OBJECT_OT_visibility_off(bpy.types.Operator):
         for obj in context.selected_objects:
             new_visibility_modifier = toggle_visibility(obj, current_frame, False)
             # Set initial visibility state to False for the object
-            new_visibility_modifier["Socket_2"] = False
+            set_modifier_input_value(new_visibility_modifier, "Visibility", False)
 
         self.report(
             {"INFO"},
@@ -288,7 +297,7 @@ class OBJECT_OT_copy_to_plane(bpy.types.Operator):
             # Make the object visible with visibility modifier
             new_visibility_modifier = toggle_visibility(copy_obj, current_frame, True)
             # Set initial visibility state to True for the new object
-            new_visibility_modifier["Socket_2"] = True
+            set_modifier_input_value(new_visibility_modifier, "Visibility", True)
             
             # Ensure the opacity property exists
             if "opacity" not in copy_obj:

@@ -1,4 +1,3 @@
-import contextlib
 from pathlib import Path
 import tempfile
 from typing import Optional, Tuple
@@ -155,13 +154,8 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
             if current_mat.users == 0:
                 bpy.data.materials.remove(current_mat)
 
-    # Clean up any remaining unused materials
-    # for _ in range(3):  # Run multiple times to ensure all orphaned data is removed
-    with contextlib.redirect_stdout(None):
-
-        bpy.ops.outliner.orphans_purge(
-            do_recursive=True
-        )  # TODO : not very tested, and might delete some materials unintended
+    # Do not purge Blender-wide orphaned data here. Importing Typst content
+    # must not remove unused datablocks that belong to the current scene.
 
 
 # Helper functions for object manipulation

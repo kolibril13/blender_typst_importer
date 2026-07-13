@@ -1,6 +1,7 @@
 import bpy
 from .visibility import toggle_visibility
 from .op_utils import get_or_create_collection  
+from ..node_groups import set_modifier_input_value
 
 
 
@@ -66,7 +67,7 @@ class OBJECT_OT_copy_without_keyframes(bpy.types.Operator):
             # Make the new object visible right away
             new_visibility_modifier = toggle_visibility(new_obj, current_frame, make_visible=True)
             # Set initial visibility state to True for the new object
-            new_visibility_modifier["Socket_2"] = True
+            set_modifier_input_value(new_visibility_modifier, "Visibility", True)
 
         # Reselect all the new objects
         bpy.ops.object.select_all(action='DESELECT')
@@ -80,4 +81,4 @@ class OBJECT_OT_copy_without_keyframes(bpy.types.Operator):
             {"INFO"},
             f"Created {len(copied_objects)} static copies in collection 'AnimationObjs'"
         )
-        return {"FINISHED"} 
+        return {"FINISHED"}

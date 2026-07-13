@@ -1,6 +1,10 @@
 import bpy
-from ..node_groups import create_follow_curve_node_group
-from .op_utils import get_or_create_collection
+from ..node_groups import (
+    create_follow_curve_node_group,
+    modifier_input_data_path,
+    set_modifier_input_value,
+)
+from .op_utils import animation_fcurves, get_or_create_collection
 from ..operators.visibility import toggle_visibility
 
 # Helper functions
@@ -87,6 +91,29 @@ def get_two_selected_objects(context, report_func=None):
         first_obj, second_obj = second_obj, first_obj
 
     return first_obj, second_obj
+
+
+def configure_follow_path_animation(
+    obj: bpy.types.Object,
+    modifier: bpy.types.NodesModifier,
+    curve_obj: bpy.types.Object,
+    current_frame: int,
+    duration: int = 10,
+) -> None:
+    """Assign a path and keyframe its Geometry Nodes factor in Blender 5.2."""
+    set_modifier_input_value(modifier, "Object", curve_obj)
+    factor_data_path = modifier_input_data_path(modifier, "Factor")
+
+    fcurves = animation_fcurves(obj)
+    for fcurve in list(fcurves):
+        if fcurve.data_path == factor_data_path:
+            fcurves.remove(fcurve)
+
+    set_modifier_input_value(modifier, "Factor", 0.0)
+    obj.keyframe_insert(factor_data_path, frame=current_frame)
+    set_modifier_input_value(modifier, "Factor", 1.0)
+    obj.keyframe_insert(factor_data_path, frame=current_frame + duration)
+    set_modifier_input_value(modifier, "Factor", 0.0)
 
 
 class OBJECT_OT_create_arc(bpy.types.Operator):
@@ -202,35 +229,15 @@ class OBJECT_OT_follow_path(bpy.types.Operator):
         # Assign the node group to the modifier
         burst_obj_modifier.node_group = geometry_nodes
 
-        # Set the curve obj as the target
-        burst_obj_modifier["Socket_2"] = curve_obj
-
         # Get the current frame
         current_frame = context.scene.frame_current
 
-        # Clear any existing keyframes for this property
-        if burst_obj.animation_data and burst_obj.animation_data.action:
-            fcurves = burst_obj.animation_data.action.fcurves
-            for fc in fcurves:
-                if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
-                    burst_obj.animation_data.action.fcurves.remove(fc)
-                    break
-
-        # Add keyframe at current frame with factor 0.0
-        burst_obj_modifier["Socket_3"] = 0.0
-        burst_obj.keyframe_insert(
-            'modifiers["FollowPath"]["Socket_3"]', frame=current_frame
+        configure_follow_path_animation(
+            burst_obj,
+            burst_obj_modifier,
+            curve_obj,
+            current_frame,
         )
-
-        # Add keyframe 10 frames later with factor 1.0
-        next_frame = current_frame + 10
-        burst_obj_modifier["Socket_3"] = 1.0
-        burst_obj.keyframe_insert(
-            'modifiers["FollowPath"]["Socket_3"]', frame=next_frame
-        )
-
-        # Reset to initial value for display
-        burst_obj_modifier["Socket_3"] = 0.0
 
         # Toggle visibility of the standing object
 
@@ -342,35 +349,16 @@ class OBJECT_OT_arc_and_follow(bpy.types.Operator):
         # Assign the node group to the modifier
         burst_obj_modifier.node_group = geometry_nodes
 
-        # Set the curve obj as the target
-        burst_obj_modifier["Socket_2"] = curve_obj
-
         # Get the current frame
         current_frame = context.scene.frame_current
 
-        # Clear any existing keyframes for this property
-        if burst_obj.animation_data and burst_obj.animation_data.action:
-            fcurves = burst_obj.animation_data.action.fcurves
-            for fc in fcurves:
-                if fc.data_path == 'modifiers["FollowPath"]["Socket_3"]':
-                    burst_obj.animation_data.action.fcurves.remove(fc)
-                    break
-
-        # Add keyframe at current frame with factor 0.0
-        burst_obj_modifier["Socket_3"] = 0.0
-        burst_obj.keyframe_insert(
-            'modifiers["FollowPath"]["Socket_3"]', frame=current_frame
+        configure_follow_path_animation(
+            burst_obj,
+            burst_obj_modifier,
+            curve_obj,
+            current_frame,
         )
-
-        # Add keyframe 10 frames later with factor 1.0
         next_frame = current_frame + 10
-        burst_obj_modifier["Socket_3"] = 1.0
-        burst_obj.keyframe_insert(
-            'modifiers["FollowPath"]["Socket_3"]', frame=next_frame
-        )
-
-        # Reset to initial value for display
-        burst_obj_modifier["Socket_3"] = 0.0
 
         # Step 4: Toggle visibility of the standing object
         from ..operators.visibility import toggle_visibility
@@ -417,4 +405,4 @@ class OBJECT_OT_hide_bezier_collection(bpy.types.Operator):
         else:
             self.report({"WARNING"}, "Collection 'beziers' not found")
 
-        return {"FINISHED"} 
+        return {"FINISHED"}

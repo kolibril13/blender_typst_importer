@@ -25,6 +25,30 @@ def _interface_input(node_group, name):
     )
 
 
+def modifier_input(modifier, socket_name):
+    """Return a Geometry Nodes modifier input and its interface socket."""
+    socket = _interface_input(modifier.node_group, socket_name)
+    if socket is None:
+        raise ValueError(
+            f"Node group {modifier.node_group.name!r} has no {socket_name!r} input"
+        )
+    return getattr(modifier.properties.inputs, socket.identifier), socket
+
+
+def set_modifier_input_value(modifier, socket_name, value):
+    """Set a Geometry Nodes modifier input with Blender 5.2 typed RNA."""
+    input_value, socket = modifier_input(modifier, socket_name)
+    input_value.type = "VALUE"
+    input_value.value = value
+    return socket
+
+
+def modifier_input_data_path(modifier, socket_name):
+    """Return the Blender RNA path used to keyframe a modifier input."""
+    _, socket = modifier_input(modifier, socket_name)
+    return f'modifiers["{modifier.name}"].properties.inputs.{socket.identifier}.value'
+
+
 def create_grease_pencil_stroke_radius_node_group():
     """Create the shared Blender 5.2 node group for Typst GP outlines.
 
@@ -136,7 +160,6 @@ def add_grease_pencil_stroke_radius_modifier(
         raise ValueError("Grease Pencil stroke radius must be non-negative")
 
     node_group = create_grease_pencil_stroke_radius_node_group()
-    radius_socket = _interface_input(node_group, "Stroke Radius")
     modifier = obj.modifiers.new(
         name=GREASE_PENCIL_STROKE_NODE_GROUP,
         type="NODES",
@@ -146,12 +169,7 @@ def add_grease_pencil_stroke_radius_modifier(
     # Blender 5.2 exposes modifier inputs through a typed RNA interface. The
     # legacy modifier["Socket_2"] ID-property access is unsupported by the
     # current API.
-    modifier_input = getattr(
-        modifier.properties.inputs,
-        radius_socket.identifier,
-    )
-    modifier_input.type = "VALUE"
-    modifier_input.value = float(stroke_radius)
+    set_modifier_input_value(modifier, "Stroke Radius", float(stroke_radius))
     return modifier
 
 

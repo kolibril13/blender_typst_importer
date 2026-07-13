@@ -6,6 +6,8 @@
 
 import glob
 import os
+from pathlib import Path
+import shlex
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -14,9 +16,11 @@ import bpy
 
 
 
+ROOT_DIR = Path(__file__).resolve().parent
 ADDON_NAME = "typst_importer"
-TOML_PATH = f"./{ADDON_NAME}/blender_manifest.toml"
-WHL_PATH = f"./{ADDON_NAME}/wheels"
+ADDON_DIR = ROOT_DIR / ADDON_NAME
+TOML_PATH = ADDON_DIR / "blender_manifest.toml"
+WHL_PATH = ADDON_DIR / "wheels"
 
 # Instead of reading from pyproject.toml, define the required packages here:
 required_packages = ["typst", "databpy" ,"svg.path" , "lxml"] 
@@ -25,7 +29,7 @@ def run_python(args: str | List[str]):
     python = os.path.realpath(sys.executable)
 
     if isinstance(args, str):
-        args = [python] + args.split(" ")
+        args = [python, *shlex.split(args)]
     elif isinstance(args, list):
         args = [python] + args
     else:
@@ -34,7 +38,7 @@ def run_python(args: str | List[str]):
             "or a list of individual arguments already split"
         )
 
-    subprocess.run(args)
+    subprocess.run(args, check=True)
 
 
 try:
@@ -152,16 +156,20 @@ def build_extension(split: bool = True) -> None:
     for suffix in [".blend1", ".MNSession"]:
         clean_files(suffix=suffix)
 
+    command = [
+        bpy.app.binary_path,
+        "--factory-startup",
+        "--command",
+        "extension",
+        "build",
+        "--source-dir",
+        str(ADDON_DIR),
+        "--output-dir",
+        str(ROOT_DIR),
+    ]
     if split:
-        subprocess.run(
-            f"{bpy.app.binary_path} --command extension build"
-            f" --split-platforms --source-dir {ADDON_NAME} --output-dir ".split(" ")
-        )
-    else:
-        subprocess.run(
-            f"{bpy.app.binary_path} --command extension build "
-            f"--source-dir {ADDON_NAME} --output-dir .".split(" ")
-        )
+        command.append("--split-platforms")
+    subprocess.run(command, check=True)
 
 
 def build(platform) -> None:

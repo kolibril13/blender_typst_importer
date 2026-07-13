@@ -8,6 +8,9 @@
 * Preserve glyph holes with the current `fill_id` and `hide_stroke` drawing attributes.
 * Add a shared Geometry Nodes modifier with an editable Grease Pencil stroke radius.
 * Restore black outlines while retaining each Typst color as the Grease Pencil fill.
+* Restore Geometry Nodes path and visibility animation tools for Blender 5.2.
+* Keep routine imports from purging unrelated orphaned Blender data.
+* Validate extension archives and core importer workflows in CI.
 
 ## v0.3.2
 

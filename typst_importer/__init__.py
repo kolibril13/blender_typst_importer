@@ -40,6 +40,7 @@ from .operators.utility import (
 
 from .operators.textbox_import import (
     ImportFromTextboxAsCurveOperator,
+    ImportFromTextboxAsGreasePencilOperator,
     ImportFromTextboxAsMeshOperator,
     ImportFromTextboxAsUnfilledCurveOperator,
 )
@@ -126,6 +127,14 @@ class VIEW3D_PT_typst_textbox_import(bpy.types.Panel):
             ImportFromTextboxAsCurveOperator.bl_idname,
             text="Import as Curve",
             icon="CURVE_DATA",
+        )
+        row.enabled = has_content
+
+        row = box.row()
+        row.operator(
+            ImportFromTextboxAsGreasePencilOperator.bl_idname,
+            text="Import as Grease Pencil",
+            icon="GREASEPENCIL",
         )
         row.enabled = has_content
 
@@ -279,6 +288,7 @@ def register():
     bpy.utils.register_class(OBJECT_OT_join_to_plane)
     bpy.utils.register_class(OBJECT_OT_copy_to_plane)
     bpy.utils.register_class(ImportFromTextboxAsCurveOperator)
+    bpy.utils.register_class(ImportFromTextboxAsGreasePencilOperator)
     bpy.utils.register_class(ImportFromTextboxAsMeshOperator)
     bpy.utils.register_class(ImportFromTextboxAsUnfilledCurveOperator)
     bpy.utils.register_class(VIEW3D_PT_typst_textbox_import)
@@ -315,6 +325,7 @@ def unregister():
     bpy.utils.unregister_class(VIEW3D_PT_typst_textbox_import)
     bpy.utils.unregister_class(ImportFromTextboxAsUnfilledCurveOperator)
     bpy.utils.unregister_class(ImportFromTextboxAsMeshOperator)
+    bpy.utils.unregister_class(ImportFromTextboxAsGreasePencilOperator)
     bpy.utils.unregister_class(ImportFromTextboxAsCurveOperator)
     bpy.utils.unregister_class(OBJECT_OT_copy_to_plane)
     bpy.utils.unregister_class(OBJECT_OT_join_to_plane)

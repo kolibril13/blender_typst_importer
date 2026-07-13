@@ -2,6 +2,13 @@
 
 # Changelog
 
+## Unreleased
+
+* Restore Grease Pencil import using Blender 5.2's native Curve conversion API.
+* Preserve glyph holes with the current `fill_id` and `hide_stroke` drawing attributes.
+* Add a shared Geometry Nodes modifier with an editable Grease Pencil stroke radius.
+* Restore black outlines while retaining each Typst color as the Grease Pencil fill.
+
 ## v0.3.2
 
 * Update to typst 0.15.0

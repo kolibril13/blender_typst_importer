@@ -87,6 +87,20 @@ class ImportFromTextboxAsMeshOperator(ImportFromTextboxOperator):
         )
 
 
+class ImportFromTextboxAsGreasePencilOperator(ImportFromTextboxOperator):
+    """Import textbox content as native Blender 5.2 Grease Pencil objects"""
+    bl_idname = "import_scene.import_textbox_grease_pencil"
+    bl_label = "Import from Textbox as Grease Pencil"
+
+    def import_typst(self, typst_file: Path, origin_to_char: bool = False):
+        return typst_to_blender_curves(
+            typst_file,
+            convert_to_mesh=False,
+            use_grease_pencil=True,
+            origin_to_char=origin_to_char,
+        )
+
+
 class ImportFromTextboxAsUnfilledCurveOperator(ImportFromTextboxOperator):
     """Import textbox content as unfilled curves"""
     bl_idname = "import_scene.import_textbox_unfilled_curve"

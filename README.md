@@ -21,9 +21,29 @@ https://www.youtube.com/watch?v=IYveJn5M3TA
 # Python API
 
 ```py
-from typst_importer.typst_to_svg import typst_express
+from bl_ext.blender_org.typst_importer.typst_to_svg import typst_express
 typst_express("$ a = b/c $")
 ```
+
+Import as native Blender 5.2 Grease Pencil objects:
+
+```py
+typst_express("$ a = b/c $", use_grease_pencil=True)
+```
+
+Every imported Grease Pencil glyph gets a shared **Typst Stroke Radius**
+Geometry Nodes group. Adjust **Stroke Radius** in the modifier (the default is
+`0.01`), or choose the initial radius from Python:
+
+```py
+typst_express(
+    "$ a = b/c $",
+    use_grease_pencil=True,
+    grease_pencil_stroke_radius=0.02,
+)
+```
+
+The Typst color remains the fill color and the generated stroke is black.
 
 More python examples at:
 https://kolibril13.github.io/bpy-gallery/n4typst_examples/

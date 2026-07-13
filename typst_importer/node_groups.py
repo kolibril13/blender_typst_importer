@@ -3,6 +3,158 @@ import bpy, mathutils
 # auto generated node group with https://extensions.blender.org/add-ons/node-to-python/
 
 
+GREASE_PENCIL_STROKE_NODE_GROUP = "Typst Stroke Radius"
+DEFAULT_GREASE_PENCIL_STROKE_RADIUS = 0.01
+_GREASE_PENCIL_STROKE_NODE_GROUP_MARKER_KEY = "typst_importer_node_group"
+_GREASE_PENCIL_STROKE_NODE_GROUP_MARKER = (
+    "typst_importer.grease_pencil_stroke_radius.v1"
+)
+
+
+def _interface_input(node_group, name):
+    """Return a named input socket from a node-group interface."""
+    return next(
+        (
+            item
+            for item in node_group.interface.items_tree
+            if item.item_type == "SOCKET"
+            and item.in_out == "INPUT"
+            and item.name == name
+        ),
+        None,
+    )
+
+
+def create_grease_pencil_stroke_radius_node_group():
+    """Create the shared Blender 5.2 node group for Typst GP outlines.
+
+    Curve-to-Grease-Pencil conversion stores stroke visibility in the
+    curve-domain ``hide_stroke`` attribute and thickness in the point-domain
+    ``radius`` attribute. The modifier makes the converted strokes visible and
+    exposes their radius without changing the fill grouping.
+    """
+    for existing in bpy.data.node_groups:
+        if (
+            existing.get(_GREASE_PENCIL_STROKE_NODE_GROUP_MARKER_KEY)
+            == _GREASE_PENCIL_STROKE_NODE_GROUP_MARKER
+            and existing.bl_idname == "GeometryNodeTree"
+            and _interface_input(existing, "Stroke Radius") is not None
+        ):
+            return existing
+
+    node_group = bpy.data.node_groups.new(
+        type="GeometryNodeTree",
+        name=GREASE_PENCIL_STROKE_NODE_GROUP,
+    )
+    node_group.is_modifier = True
+    node_group.description = (
+        "Show Typst Grease Pencil strokes and control their radius"
+    )
+    node_group[_GREASE_PENCIL_STROKE_NODE_GROUP_MARKER_KEY] = (
+        _GREASE_PENCIL_STROKE_NODE_GROUP_MARKER
+    )
+
+    geometry_output = node_group.interface.new_socket(
+        name="Geometry",
+        in_out="OUTPUT",
+        socket_type="NodeSocketGeometry",
+    )
+    geometry_output.attribute_domain = "POINT"
+
+    geometry_input = node_group.interface.new_socket(
+        name="Geometry",
+        in_out="INPUT",
+        socket_type="NodeSocketGeometry",
+    )
+    geometry_input.attribute_domain = "POINT"
+
+    radius_input = node_group.interface.new_socket(
+        name="Stroke Radius",
+        in_out="INPUT",
+        socket_type="NodeSocketFloat",
+    )
+    radius_input.default_value = DEFAULT_GREASE_PENCIL_STROKE_RADIUS
+    radius_input.min_value = 0.0
+    radius_input.max_value = 10.0
+    radius_input.subtype = "DISTANCE"
+    radius_input.attribute_domain = "POINT"
+    radius_input.description = "Radius of the visible Grease Pencil stroke"
+
+    group_input = node_group.nodes.new("NodeGroupInput")
+    group_input.name = "Group Input"
+    group_input.location = (-500.0, 0.0)
+
+    show_stroke = node_group.nodes.new("GeometryNodeStoreNamedAttribute")
+    show_stroke.name = "Show Stroke"
+    show_stroke.label = "Show Stroke"
+    show_stroke.data_type = "BOOLEAN"
+    show_stroke.domain = "CURVE"
+    show_stroke.inputs["Selection"].default_value = True
+    show_stroke.inputs["Name"].default_value = "hide_stroke"
+    show_stroke.inputs["Value"].default_value = False
+    show_stroke.location = (-260.0, 0.0)
+
+    set_radius = node_group.nodes.new("GeometryNodeSetCurveRadius")
+    set_radius.name = "Set Stroke Radius"
+    set_radius.label = "Set Stroke Radius"
+    set_radius.inputs["Selection"].default_value = True
+    set_radius.location = (20.0, 0.0)
+
+    group_output = node_group.nodes.new("NodeGroupOutput")
+    group_output.name = "Group Output"
+    group_output.is_active_output = True
+    group_output.location = (280.0, 0.0)
+
+    node_group.links.new(
+        group_input.outputs["Geometry"],
+        show_stroke.inputs["Geometry"],
+    )
+    node_group.links.new(
+        show_stroke.outputs["Geometry"],
+        set_radius.inputs["Curve"],
+    )
+    node_group.links.new(
+        group_input.outputs["Stroke Radius"],
+        set_radius.inputs["Radius"],
+    )
+    node_group.links.new(
+        set_radius.outputs["Curve"],
+        group_output.inputs["Geometry"],
+    )
+
+    return node_group
+
+
+def add_grease_pencil_stroke_radius_modifier(
+    obj,
+    stroke_radius=DEFAULT_GREASE_PENCIL_STROKE_RADIUS,
+):
+    """Attach the Typst stroke-radius Geometry Nodes modifier to an object."""
+    if obj.type != "GREASEPENCIL":
+        raise TypeError("Stroke-radius modifiers require a Grease Pencil object")
+    if stroke_radius < 0.0:
+        raise ValueError("Grease Pencil stroke radius must be non-negative")
+
+    node_group = create_grease_pencil_stroke_radius_node_group()
+    radius_socket = _interface_input(node_group, "Stroke Radius")
+    modifier = obj.modifiers.new(
+        name=GREASE_PENCIL_STROKE_NODE_GROUP,
+        type="NODES",
+    )
+    modifier.node_group = node_group
+
+    # Blender 5.2 exposes modifier inputs through a typed RNA interface. The
+    # legacy modifier["Socket_2"] ID-property access is unsupported by the
+    # current API.
+    modifier_input = getattr(
+        modifier.properties.inputs,
+        radius_socket.identifier,
+    )
+    modifier_input.type = "VALUE"
+    modifier_input.value = float(stroke_radius)
+    return modifier
+
+
 def create_follow_curve_node_group():
     """
     Creates a Geometry Nodes group that makes an object follow a curve.

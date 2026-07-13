@@ -74,7 +74,7 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     mat.blend_method = "BLEND"
 
     mat.node_tree.nodes.clear()
-    with s.tree(mat.node_tree, arrange=None) as tree:
+    with s.tree(mat.node_tree, arrange="sugiyama") as tree:
         opacity = s.Attribute.object("opacity")
         mixed = s.MixShader(
             fac=opacity.o.fac,
@@ -439,7 +439,7 @@ def add_indices_to_collection(imported_collection):
                 # Set up material for transparency
                 bg_mat.use_nodes = True
                 bg_mat.node_tree.nodes.clear()
-                with s.tree(bg_mat.node_tree, arrange=None) as tree:
+                with s.tree(bg_mat.node_tree, arrange="sugiyama") as tree:
                     principled = s.PrincipledBSDF(
                         base_color=(1.0, 1.0, 1.0, 1.0), alpha=0.2
                     )

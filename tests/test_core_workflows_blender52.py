@@ -78,6 +78,14 @@ def test_follow_path_uses_typed_object_and_factor_inputs():
     modifier.node_group = create_follow_curve_node_group()
     configure_follow_path_animation(follower, modifier, path, current_frame=3)
 
+    follow_path_nodes = modifier.node_group.nodes
+    assert follow_path_nodes["Object Info"].location.x < follow_path_nodes[
+        "Sample Curve"
+    ].location.x
+    assert follow_path_nodes["Sample Curve"].location.x < follow_path_nodes[
+        "Transform Geometry"
+    ].location.x
+
     object_input, _ = modifier_input(modifier, "Object")
     factor_input, factor_socket = modifier_input(modifier, "Factor")
     assert object_input.type == "VALUE"

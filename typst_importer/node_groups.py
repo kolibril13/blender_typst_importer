@@ -59,7 +59,7 @@ def create_grease_pencil_stroke_radius_node_group():
         ):
             return existing
 
-    with g.tree(GREASE_PENCIL_STROKE_NODE_GROUP, arrange=None) as tree:
+    with g.tree(GREASE_PENCIL_STROKE_NODE_GROUP, arrange="sugiyama") as tree:
         node_group = tree.tree
         node_group.is_modifier = True
         node_group.description = (
@@ -122,7 +122,7 @@ def add_grease_pencil_stroke_radius_modifier(
 
 def create_follow_curve_node_group():
     """Create a Geometry Nodes group that makes an object follow a curve."""
-    with g.tree("Follow Path", arrange=None) as tree:
+    with g.tree("Follow Path", arrange="sugiyama") as tree:
         follow_path = tree.tree
         follow_path.color_tag = "NONE"
         follow_path.description = ""
@@ -163,7 +163,7 @@ def create_follow_curve_node_group():
 
 def visibility_node_group():
     """Create a Geometry Nodes group that controls object visibility."""
-    with g.tree("Visibility", arrange=None) as tree:
+    with g.tree("Visibility", arrange="sugiyama") as tree:
         visibility = tree.tree
         visibility.color_tag = "NONE"
         visibility.description = ""

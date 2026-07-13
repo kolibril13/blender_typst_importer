@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+## v0.3.6
+
+* Arrange generated Geometry Nodes and shader trees with NodeBpy's Sugiyama layout.
+* Bundle NetworkX so automatic node arrangement works in installed extensions.
+* Refine the Typst input panel with a collapsible custom-header editor and a simpler import order.
+
 * Restore Grease Pencil import using Blender 5.2's native Curve conversion API.
 * Preserve glyph holes with the current `fill_id` and `hide_stroke` drawing attributes.
 * Add a shared Geometry Nodes modifier with an editable Grease Pencil stroke radius.

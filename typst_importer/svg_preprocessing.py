@@ -315,6 +315,7 @@ def flatten_svg(svg_content):
                         "height",
                         "viewBox",
                         "preserveAspectRatio",
+                        "overflow",
                     }:
                         target_group.set(attr_name, attr_value)
 
@@ -342,6 +343,14 @@ def flatten_svg(svg_content):
                 target_viewport = etree.Element(f"{{{SVG_NS}}}svg")
                 target_viewport.set("width", _number(width))
                 target_viewport.set("height", _number(height))
+                # ``overflow`` belongs to the viewport established when a
+                # <symbol> or nested <svg> is instantiated.  Leaving it on
+                # the surrounding group makes the synthetic viewport use the
+                # SVG default (hidden), which clips Typst's translated emoji
+                # bitmaps down to a thin strip.
+                overflow_value = target.get("overflow")
+                if overflow_value is not None:
+                    target_viewport.set("overflow", overflow_value)
                 viewbox_value = target.get("viewBox")
                 if viewbox_value is not None:
                     target_viewport.set("viewBox", viewbox_value)

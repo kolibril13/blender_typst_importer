@@ -8,6 +8,7 @@ import struct
 import zlib
 
 import bpy
+from lxml import etree
 import pytest
 
 from typst_importer.image_import import extract_svg_images
@@ -61,6 +62,32 @@ def test_preprocessing_extracts_embedded_use_image_with_viewport_geometry():
     assert max(xs) == pytest.approx(44.0)
     assert min(ys) == pytest.approx(5.0)
     assert max(ys) == pytest.approx(65.0)
+
+
+def test_preprocessing_preserves_visible_overflow_for_typst_image_symbols():
+    data_uri = _data_uri()
+    svg = f'''<svg xmlns="{SVG_NS}" width="100" height="20">
+      <defs><symbol id="emoji" overflow="visible">
+        <image transform="translate(0 -80)" width="100" height="100"
+          preserveAspectRatio="none" href="{data_uri}"/>
+      </symbol></defs>
+      <use href="#emoji" transform="scale(0.2 -0.2)"/>
+    </svg>'''
+
+    processed = preprocess_svg(svg)
+    root = etree.fromstring(processed.encode("utf-8"))
+    image = root.xpath("//*[local-name()='image']")[0]
+    image_viewport = next(
+        ancestor
+        for ancestor in image.iterancestors()
+        if etree.QName(ancestor).localname == "svg" and ancestor is not root
+    )
+
+    # Typst positions the full bitmap outside the symbol's nominal viewport.
+    # The symbol therefore relies on visible overflow; putting this property
+    # only on an outer group clips the emoji to a thin horizontal strip.
+    assert image_viewport.get("overflow") == "visible"
+    assert image.get("href") == data_uri
 
 
 def test_external_images_are_contained_to_the_typst_source_folder(tmp_path: Path):
@@ -117,8 +144,12 @@ def test_typst_image_becomes_a_packed_textured_plane(tmp_path: Path):
     curves = [obj for obj in collection.objects if obj.type == "CURVE"]
     assert len(curves) == 1
     assert plane.get("svg_paint_index") > curves[0].get("svg_paint_index")
-    assert plane.dimensions.x == pytest.approx(curves[0].dimensions.x, abs=2e-6)
-    assert plane.dimensions.y == pytest.approx(curves[0].dimensions.y, abs=2e-6)
+    # Curve geometry is rescaled in place. Updating the dependency graph keeps
+    # Blender from returning its stale, pre-scale dimensions and ensures this
+    # comparison catches image planes that miss the same import scale.
+    bpy.context.view_layer.update()
+    assert plane.dimensions.x == pytest.approx(curves[0].dimensions.x, rel=1e-3)
+    assert plane.dimensions.y == pytest.approx(curves[0].dimensions.y, rel=1e-3)
     material = plane.data.materials[0]
     texture = next(
         node

@@ -723,6 +723,7 @@ def typst_to_blender_curves(
             imported_collection,
             use_emission=True,
             warnings=image_warnings,
+            scale_factor=scale_factor,
         )
         if marker_ids:
             finalize_paint_order(

@@ -1,6 +1,6 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
-from bpy.props import StringProperty
+from bpy.props import BoolProperty, StringProperty
 from pathlib import Path
 import time
 
@@ -22,6 +22,14 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
     # Set a default extension (the user can change it in the file browser)
     filename_ext = ".txt"
     filter_glob: StringProperty(default="*.txt;*.typ", options={"HIDDEN"}, maxlen=255)
+    allow_external_images: BoolProperty(
+        name="Allow Images Outside Typst Folder",
+        description=(
+            "Allow absolute paths and parent-directory image references; "
+            "leave disabled for untrusted Typst files"
+        ),
+        default=False,
+    )
 
     def execute(self, context):
         # Verify that the selected file is either a .txt or .typ file.
@@ -37,7 +45,10 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         start_time = time.perf_counter()
 
         # Compile and import the file using our helper function
-        collection = typst_to_blender_curves(typst_file)
+        collection = typst_to_blender_curves(
+            typst_file,
+            allow_external_images=self.allow_external_images,
+        )
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
         self.report(

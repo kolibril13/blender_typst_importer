@@ -1,6 +1,8 @@
 from pathlib import Path
 import tempfile
 from typing import Optional, Tuple
+import importlib
+import os
 
 from mathutils import Matrix
 import bpy
@@ -13,6 +15,11 @@ from .node_groups import (
     add_grease_pencil_stroke_radius_modifier,
 )
 from .svg_preprocessing import preprocess_svg
+from .image_import import (
+    create_image_planes,
+    finalize_paint_order,
+    prepare_svg_images,
+)
 
 # Register the property for collections
 bpy.types.Collection.processed_svg = bpy.props.StringProperty(
@@ -45,6 +52,171 @@ def move_objects(objs, target_collection: bpy.types.Collection) -> None:
 
         # Link to target collection
         target_collection.objects.link(obj)
+
+
+def _snapshot_svg_import_state():
+    """Capture Blender data created by one Typst SVG import transaction."""
+    return {
+        "collections": set(bpy.data.collections),
+        "objects": set(bpy.data.objects),
+        "curves": set(bpy.data.curves),
+        "meshes": set(bpy.data.meshes),
+        "materials": set(bpy.data.materials),
+        "images": set(bpy.data.images),
+        "owned_collections": set(),
+    }
+
+
+def _rollback_svg_import_state(before) -> None:
+    """Remove only data created by a failed Typst SVG import."""
+    owned_collections = set()
+
+    def collect_collection(collection):
+        if collection in owned_collections:
+            return
+        owned_collections.add(collection)
+        for child in collection.children:
+            if child not in before["collections"]:
+                collect_collection(child)
+
+    for collection in before["owned_collections"]:
+        if collection.name in bpy.data.collections:
+            collect_collection(collection)
+
+    new_objects = set(bpy.data.objects) - before["objects"]
+    owned_objects = {
+        obj
+        for collection in owned_collections
+        for obj in collection.objects
+        if obj in new_objects
+    }
+    owned_objects.update(
+        obj for obj in new_objects if obj.get("typst_svg_image_object")
+    )
+
+    owned_meshes = set()
+    owned_curves = set()
+    owned_materials = set()
+    owned_images = set()
+    for obj in owned_objects:
+        data = obj.data
+        if isinstance(data, bpy.types.Mesh):
+            owned_meshes.add(data)
+        elif isinstance(data, bpy.types.Curve):
+            owned_curves.add(data)
+        if data is not None and hasattr(data, "materials"):
+            owned_materials.update(
+                material for material in data.materials if material is not None
+            )
+
+    for material in owned_materials:
+        if not material.use_nodes or material.node_tree is None:
+            continue
+        for node in material.node_tree.nodes:
+            image = getattr(node, "image", None)
+            if image is not None:
+                owned_images.add(image)
+
+    for obj in owned_objects:
+        bpy.data.objects.remove(obj, do_unlink=True)
+    for collection in tuple(owned_collections):
+        if collection in bpy.data.collections.values():
+            bpy.data.collections.remove(collection)
+
+    owned_meshes.update(
+        mesh
+        for mesh in set(bpy.data.meshes) - before["meshes"]
+        if mesh.get("typst_svg_image_mesh")
+    )
+    owned_materials.update(
+        material
+        for material in set(bpy.data.materials) - before["materials"]
+        if material.get("typst_svg_image_material")
+        or material.get("typst_svg_blender_material")
+    )
+    owned_images.update(
+        image
+        for image in set(bpy.data.images) - before["images"]
+        if image.get("typst_svg_source_hash")
+    )
+
+    for mesh in owned_meshes:
+        if mesh not in before["meshes"] and mesh.users == 0:
+            bpy.data.meshes.remove(mesh)
+    for curve in owned_curves:
+        if curve not in before["curves"] and curve.users == 0:
+            bpy.data.curves.remove(curve)
+    for material in owned_materials:
+        if material not in before["materials"] and material.users == 0:
+            bpy.data.materials.remove(material)
+    for image in owned_images:
+        if image not in before["images"] and image.users == 0:
+            bpy.data.images.remove(image)
+
+
+def _remove_unused_svg_materials(before) -> None:
+    """Clean importer-owned materials made obsolete by curve deduplication."""
+    for material in tuple(set(bpy.data.materials) - before["materials"]):
+        if material.users == 0 and material.get("typst_svg_blender_material"):
+            bpy.data.materials.remove(material)
+
+
+def _import_marked_svg(svg_content, import_state) -> bpy.types.Collection:
+    """Import temporary SVG text and track only the collection it creates."""
+    temporary = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".svg", encoding="utf-8", delete=False
+    )
+    try:
+        temporary.write(svg_content)
+        temporary.close()
+        collections_before = set(bpy.context.scene.collection.children)
+        material_hook = None
+        try:
+            svg_import_module = importlib.import_module("io_curve_svg.import_svg")
+            original_get_material = svg_import_module.SVGGetMaterial
+
+            def tracked_get_material(color, import_context):
+                material = original_get_material(color, import_context)
+                if (
+                    material is not None
+                    and material not in import_state["materials"]
+                ):
+                    material["typst_svg_blender_material"] = True
+                return material
+
+            svg_import_module.SVGGetMaterial = tracked_get_material
+            material_hook = svg_import_module, original_get_material, tracked_get_material
+        except (AttributeError, ImportError):
+            pass
+        try:
+            bpy.ops.import_curve.svg(filepath=temporary.name)
+        finally:
+            source_name = Path(temporary.name).name
+            imported_collection = next(
+                (
+                    collection
+                    for collection in bpy.context.scene.collection.children
+                    if collection not in collections_before
+                    and collection.name == source_name
+                ),
+                None,
+            )
+            if imported_collection is not None:
+                import_state["owned_collections"].add(imported_collection)
+            if material_hook is not None:
+                module, original, tracked = material_hook
+                if module.SVGGetMaterial is tracked:
+                    module.SVGGetMaterial = original
+    finally:
+        temporary.close()
+        try:
+            os.unlink(temporary.name)
+        except OSError:
+            pass
+
+    if not import_state["owned_collections"]:
+        raise RuntimeError("Failed to import SVG file")
+    return next(iter(import_state["owned_collections"]))
         
 
 # Core object and material setup functions
@@ -109,10 +281,12 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
     materials_dict = {}
 
     for obj in collection.objects:
-        if not obj.data.materials:
+        if obj.type != "CURVE" or not obj.data.materials:
             continue
 
         current_mat = obj.data.materials[0]
+        if current_mat is None:
+            continue
         mat_key = tuple(current_mat.diffuse_color)
 
         if mat_key in materials_dict:
@@ -145,10 +319,13 @@ def deduplicate_materials(collection: bpy.types.Collection) -> None:
 # Helper functions for object manipulation
 def _join_curves(collection: bpy.types.Collection, name: str) -> None:
     """Helper function to join curves in a collection."""
+    curve_objects = [obj for obj in collection.objects if obj.type == "CURVE"]
+    if not curve_objects:
+        return
     bpy.ops.object.select_all(action="DESELECT")
-    for obj in collection.objects:
+    for obj in curve_objects:
         obj.select_set(True)
-    bpy.context.view_layer.objects.active = collection.objects[0]
+    bpy.context.view_layer.objects.active = curve_objects[0]
     bpy.ops.object.join()
     bpy.context.active_object.name = name
 
@@ -485,6 +662,7 @@ def typst_to_blender_curves(
     *,
     use_grease_pencil: bool = False,
     grease_pencil_stroke_radius: float = DEFAULT_GREASE_PENCIL_STROKE_RADIUS,
+    allow_external_images: bool = False,
 ) -> bpy.types.Collection:
     """
     Compile a .txt or .typ file to an SVG using Typst,
@@ -501,85 +679,111 @@ def typst_to_blender_curves(
         show_indices (bool, optional): If True, add blue text indices with background circles to each object. Defaults to False.
         use_grease_pencil (bool, optional): If True, create native Blender 5.2 Grease Pencil objects. This takes precedence over mesh and unfilled-curve conversion. Defaults to False.
         grease_pencil_stroke_radius (float, optional): Initial value for the editable Stroke Radius Geometry Nodes input. Defaults to 0.01.
+        allow_external_images (bool, optional): Allow image references outside
+            the Typst source folder. Keep disabled for untrusted documents.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender objects.
     """
+    typst_file = Path(typst_file)
     file_name_without_ext = typst_file.stem
+    import_state = _snapshot_svg_import_state()
 
-    # Create temporary files
-    temp_dir = Path(tempfile.gettempdir())
-    svg_file = temp_dir / f"{file_name_without_ext}.svg"
-
-    # Compile the input file to an SVG via Typst
-    typst.compile(typst_file, format="svg", output=str(svg_file))
-
-    # Process SVG content
-    svg_content = svg_file.read_text()
-    processed_svg = preprocess_svg(svg_content)
-
-    processed_svg_file = temp_dir / "processed.svg"
-    processed_svg_file.write_text(processed_svg)
-
-    # Import the processed SVG into Blender
-    bpy.ops.import_curve.svg(filepath=str(processed_svg_file))
-
-    # Get and rename the imported collection
-    imported_collection = bpy.context.scene.collection.children.get(
-        processed_svg_file.name
-    )
-    if not imported_collection:
-        raise RuntimeError("Failed to import SVG file")
-
-    imported_collection.name = f"Typst_{file_name_without_ext}"
-    imported_collection.processed_svg = processed_svg
-
-    # Also store on the scene so the Export panel can always access the latest SVG
-    bpy.context.scene.typst_last_processed_svg = processed_svg
-
-    # Setup objects and materials
-    for obj in imported_collection.objects:
-        # Rename curve objects from "Curve" to "n"
-        if obj.name.startswith("Curve"):
-            obj.name = "n" + obj.name[5:]
-        setup_object(obj, scale_factor)
-
-    deduplicate_materials(imported_collection)
-
-    if join_curves and len(imported_collection.objects) > 1:
-        _join_curves(imported_collection, file_name_without_ext)
-
-    if origin_to_char:
-        _set_origins_to_geometry(imported_collection)
-
-    if use_grease_pencil:
-        _convert_to_grease_pencil(
-            imported_collection,
-            stroke_radius=grease_pencil_stroke_radius,
-        )
-    elif convert_to_mesh:
-        _convert_to_meshes(imported_collection)
-    elif convert_to_unfilled_path:
-        _convert_to_unfilled_paths(imported_collection)
-
-    # Position the collection if coordinates are provided
-    if position is not None:
-        for obj in imported_collection.objects:
-            # Add position as an offset to current location
-            obj.location = (
-                obj.location[0] + position[0],
-                obj.location[1] + position[1],
-                obj.location[2] + position[2],
+    try:
+        # Use a unique directory and SVG filename so concurrent imports never
+        # collide with a collection created by another import.
+        with tempfile.TemporaryDirectory(prefix="typst_svg_") as temporary_dir:
+            svg_file = Path(temporary_dir) / f"{file_name_without_ext}.svg"
+            typst.compile(typst_file, format="svg", output=str(svg_file))
+            processed_svg = preprocess_svg(svg_file.read_text(encoding="utf-8"))
+            (
+                images,
+                image_warnings,
+                marked_svg,
+                marker_ids,
+            ) = prepare_svg_images(
+                processed_svg,
+                svg_dir=typst_file.parent,
+                scene_scale_length=bpy.context.scene.unit_settings.scale_length,
+                allow_external_outside_svg=allow_external_images,
             )
+            imported_collection = _import_marked_svg(marked_svg, import_state)
 
-    # Add index labels if requested
-    if show_indices:
-        add_indices_to_collection(imported_collection)
+        source_objects = list(imported_collection.objects)
 
-    # Final cleanup of any remaining unused data
-    # bpy.ops.outliner.orphans_purge(do_recursive=True)
+        imported_collection.name = f"Typst_{file_name_without_ext}"
+        imported_collection.processed_svg = processed_svg
 
-    return imported_collection
+        # Also store on the scene so the Export panel can always access the
+        # latest SVG.
+        bpy.context.scene.typst_last_processed_svg = processed_svg
+
+        create_image_planes(
+            images,
+            imported_collection,
+            use_emission=True,
+            warnings=image_warnings,
+        )
+        if marker_ids:
+            finalize_paint_order(
+                imported_collection,
+                source_objects,
+                images,
+                marker_ids,
+                image_warnings,
+            )
+        for warning in image_warnings:
+            print(f"Typst SVG image warning: {warning}")
+
+        # Setup curve objects and their vector materials. Image planes have
+        # already been created at the matching Typst scale.
+        for obj in imported_collection.objects:
+            if obj.type != "CURVE":
+                continue
+            # Rename curve objects from "Curve" to "n"
+            if obj.name.startswith("Curve"):
+                obj.name = "n" + obj.name[5:]
+            setup_object(obj, scale_factor)
+
+        deduplicate_materials(imported_collection)
+        _remove_unused_svg_materials(import_state)
+
+        if join_curves and sum(
+            obj.type == "CURVE" for obj in imported_collection.objects
+        ) > 1:
+            _join_curves(imported_collection, file_name_without_ext)
+
+        if origin_to_char:
+            _set_origins_to_geometry(imported_collection)
+
+        if use_grease_pencil:
+            _convert_to_grease_pencil(
+                imported_collection,
+                stroke_radius=grease_pencil_stroke_radius,
+            )
+        elif convert_to_mesh:
+            _convert_to_meshes(imported_collection)
+        elif convert_to_unfilled_path:
+            _convert_to_unfilled_paths(imported_collection)
+
+        # Position the collection if coordinates are provided.
+        if position is not None:
+            for obj in imported_collection.objects:
+                # Add position as an offset to current location
+                obj.location = (
+                    obj.location[0] + position[0],
+                    obj.location[1] + position[1],
+                    obj.location[2] + position[2],
+                )
+
+        # Add index labels if requested.
+        if show_indices:
+            add_indices_to_collection(imported_collection)
+
+        return imported_collection
+    except Exception:
+        _rollback_svg_import_state(import_state)
+        raise
 
 
 def typst_express(
@@ -596,6 +800,7 @@ def typst_express(
     *,
     use_grease_pencil: bool = False,
     grease_pencil_stroke_radius: float = DEFAULT_GREASE_PENCIL_STROKE_RADIUS,
+    allow_external_images: bool = False,
 ) -> bpy.types.Collection:
     """
     Create Blender objects from Typst content.
@@ -614,6 +819,8 @@ def typst_express(
         show_indices (bool, optional): If True, add blue text indices with background circles to each object. Defaults to False.
         use_grease_pencil (bool, optional): If True, create native Blender 5.2 Grease Pencil objects. This takes precedence over convert_to_mesh. Defaults to False.
         grease_pencil_stroke_radius (float, optional): Initial value for the editable Stroke Radius Geometry Nodes input. Defaults to 0.01.
+        allow_external_images (bool, optional): Allow image references outside
+            the Typst source folder. Defaults to False.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender objects.
@@ -640,6 +847,7 @@ def typst_express(
         position=position,
         show_indices=show_indices,
         grease_pencil_stroke_radius=grease_pencil_stroke_radius,
+        allow_external_images=allow_external_images,
     )
     collection.name = name
 

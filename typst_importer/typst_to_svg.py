@@ -332,43 +332,71 @@ def _join_curves(collection: bpy.types.Collection, name: str) -> None:
 
 def _set_origins_to_geometry(collection: bpy.types.Collection) -> None:
     """Helper function to set object origins to geometry."""
-    bpy.ops.object.select_all(action="DESELECT")
-    if not collection.objects:
+    objects = list(collection.objects)
+    if not objects:
         return
 
-    bpy.context.view_layer.objects.active = collection.objects[0]
+    bpy.ops.object.select_all(action="DESELECT")
+    bpy.context.view_layer.objects.active = objects[0]
     bpy.ops.object.mode_set(mode="OBJECT")
 
-    for obj in collection.objects:
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
+    # origin_set already handles every selected editable object per-object,
+    # so one batched call replaces a per-object operator loop.
+    with bpy.context.temp_override(
+        object=objects[0],
+        active_object=objects[0],
+        selected_objects=objects,
+        selected_editable_objects=objects,
+    ):
         bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY", center="MEDIAN")
-        obj.select_set(False)
 
 
 def _convert_to_meshes(collection: bpy.types.Collection) -> None:
     """Helper function to convert curves to meshes."""
-    for obj in collection.objects:
-        if obj.type != "CURVE":
-            continue
+    curve_objects = [obj for obj in collection.objects if obj.type == "CURVE"]
+    if not curve_objects:
+        return
 
-        curve_data = obj.data
-        original_name = obj.name.replace("Curve", "")
+    source_names = [obj.name for obj in curve_objects]
+    source_curve_data = []
+    for obj in curve_objects:
+        if obj.data not in source_curve_data:
+            source_curve_data.append(obj.data)
 
-        bpy.context.view_layer.objects.active = obj
-        obj.select_set(True)
+    # object.convert acts on every selected editable object. Override its
+    # selection context with exactly the imported Curves so pre-existing
+    # objects are never included. One batched call keeps large imports from
+    # paying the per-operator scene update once per glyph.
+    with bpy.context.temp_override(
+        object=curve_objects[0],
+        active_object=curve_objects[0],
+        selected_objects=list(curve_objects),
+        selected_editable_objects=list(curve_objects),
+    ):
+        result = bpy.ops.object.convert(target="MESH")
 
-        bpy.ops.object.convert(target="MESH")
+    failed_names = [
+        name
+        for obj, name in zip(curve_objects, source_names)
+        if obj.type != "MESH"
+    ]
+    if result != {"FINISHED"} or failed_names:
+        failed = failed_names[0] if failed_names else source_names[0]
+        raise RuntimeError(f"Failed to convert {failed} to mesh")
 
-        new_name = f"Mesh{original_name}"
+    for obj, original_name in zip(curve_objects, source_names):
+        new_name = f"Mesh{original_name.replace('Curve', '')}"
         obj.name = new_name
         obj.data.name = new_name
 
-        obj.select_set(False)
-        bpy.data.curves.remove(curve_data)
-
-    # Clean up any orphaned data after conversion
-    # bpy.ops.outliner.orphans_purge(do_recursive=True) #TODO : not very tested, and might delete some materials unintended
+    # In-place conversion leaves the source Curve datablocks behind. They are
+    # no longer referenced by Curve objects after a successful conversion.
+    used_curve_data = {
+        obj.data for obj in bpy.data.objects if obj.type == "CURVE"
+    }
+    for curve_data in source_curve_data:
+        if curve_data not in used_curve_data:
+            bpy.data.curves.remove(curve_data)
 
 def _convert_to_unfilled_paths(collection: bpy.types.Collection) -> None:
     
@@ -459,44 +487,31 @@ def _convert_to_grease_pencil(
         )
 
     # object.convert acts on every selected editable object. Override its
-    # selection context with exactly one imported Curve so pre-existing objects
-    # are never included in the conversion.
-    converted_objects = []
-    conversion_curve_data = []
-    for source_obj in curve_objects:
-        original_name = source_obj.name
-        objects_before_conversion = set(bpy.data.objects)
-        curves_before_conversion = set(bpy.data.curves)
-        with bpy.context.temp_override(
-            object=source_obj,
-            active_object=source_obj,
-            selected_objects=[source_obj],
-            selected_editable_objects=[source_obj],
-        ):
-            result = bpy.ops.object.convert(
-                target="GREASEPENCIL",
-                keep_original=True,
-            )
-        new_gp_objects = [
-            obj
-            for obj in bpy.data.objects
-            if obj not in objects_before_conversion and obj.type == "GREASEPENCIL"
-        ]
-        conversion_curve_data.extend(
-            curve
-            for curve in bpy.data.curves
-            if curve not in curves_before_conversion
-            and curve not in conversion_curve_data
-        )
-        gp_obj = new_gp_objects[0] if len(new_gp_objects) == 1 else None
-        if (
-            result != {"FINISHED"}
-            or gp_obj is None
-            or gp_obj is source_obj
-            or gp_obj.type != "GREASEPENCIL"
-        ):
-            raise RuntimeError(f"Failed to convert {original_name} to Grease Pencil")
+    # selection context with exactly the imported Curves so pre-existing
+    # objects are never included in the conversion. One batched call keeps
+    # large imports (e.g. syntax-highlighted code blocks with thousands of
+    # glyphs) from paying the per-operator scene update once per glyph.
+    source_names = [obj.name for obj in curve_objects]
+    curves_before_conversion = set(bpy.data.curves)
+    with bpy.context.temp_override(
+        object=curve_objects[0],
+        active_object=curve_objects[0],
+        selected_objects=list(curve_objects),
+        selected_editable_objects=list(curve_objects),
+    ):
+        result = bpy.ops.object.convert(target="GREASEPENCIL")
 
+    failed_names = [
+        name
+        for obj, name in zip(curve_objects, source_names)
+        if obj.type != "GREASEPENCIL"
+    ]
+    if result != {"FINISHED"} or failed_names:
+        failed = failed_names[0] if failed_names else source_names[0]
+        raise RuntimeError(f"Failed to convert {failed} to Grease Pencil")
+
+    converted_objects = []
+    for gp_obj, original_name in zip(curve_objects, source_names):
         gp_obj.name = f"GP_{original_name}"
         gp_obj.data.name = f"GP_{original_name}DataBlock"
 
@@ -506,15 +521,18 @@ def _convert_to_grease_pencil(
             gp_obj.data.layers.active = gp_obj.data.layers[0]
 
         converted_objects.append(gp_obj)
-        bpy.data.objects.remove(source_obj, do_unlink=True)
 
-    # object.convert leaves the source Curve datablocks behind for undo. They
-    # are no longer referenced by Curve objects after a successful conversion.
+    # In-place conversion leaves the source Curve datablocks behind (plus any
+    # temporaries the converter created). They are no longer referenced by
+    # Curve objects after a successful conversion.
+    conversion_curve_data = [
+        curve for curve in bpy.data.curves if curve not in curves_before_conversion
+    ]
+    used_curve_data = {
+        obj.data for obj in bpy.data.objects if obj.type == "CURVE"
+    }
     for curve_data in source_curve_data + conversion_curve_data:
-        is_still_used = any(
-            obj.type == "CURVE" and obj.data == curve_data for obj in bpy.data.objects
-        )
-        if not is_still_used:
+        if curve_data not in used_curve_data:
             bpy.data.curves.remove(curve_data)
 
     for material in source_materials:

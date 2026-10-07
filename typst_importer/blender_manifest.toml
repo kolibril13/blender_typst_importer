@@ -26,7 +26,7 @@ copyright = [
 	"2025 Jan-Hendrik Müller",
 ]
 wheels = [
-	"./wheels/databpy-0.10.0-py3-none-any.whl",
+	"./wheels/databpy-0.6.2-py3-none-any.whl",
 	"./wheels/nodebpy-520.34.0-py3-none-any.whl",
 	"./wheels/networkx-3.6.1-py3-none-any.whl",
 	"./wheels/lxml-6.0.2-cp313-cp313-macosx_10_13_universal2.whl",

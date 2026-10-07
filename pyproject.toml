@@ -2,9 +2,9 @@
 name = "typst_importer"
 version = "0.0.1"  # Placeholder; the real version is defined in blender_manifest.toml
 description = "Blender extension to render Typst files"
-license = { text = "AGPL-3.0-or-later" }
+license = { text = "GPL-3.0-or-later" }
 readme = "README.md"
-dependencies = ["typst", "svg.path", "lxml", "databpy", "nodebpy==520.5.2", "networkx==3.6.1"]
+dependencies = ["typst", "svg.path", "lxml", "databpy>=0.10.0", "nodebpy>=520.34.0", "networkx>=3.6.1"]
 requires-python = ">=3.13.0"
 keywords = ["blender", "python", "typst"]
 maintainers = [

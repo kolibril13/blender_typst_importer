@@ -42,7 +42,7 @@ jobs:
           echo "See release notes: ${RELEASE_URL}" > release_notes.txt
           for zipfile in *.zip; do
             echo "Uploading $zipfile to Blender Extensions Platform"
-            curl -X POST https://extensions.blender.org/api/v1/extensions/${EXTENSION}/versions/upload/ \
+            curl --fail-with-body -sS -X POST https://extensions.blender.org/api/v1/extensions/${EXTENSION}/versions/upload/ \
               -H "Authorization:bearer ${{ secrets.BLENDER_EXTENSIONS_TOKEN }}" \
               -F "version_file=@${zipfile}" \
               -F "release_notes=<release_notes.txt"

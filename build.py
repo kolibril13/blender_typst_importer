@@ -28,7 +28,7 @@ required_packages = [
     "databpy",
     "svg.path",
     "lxml",
-    "nodebpy==520.5.2",
+    "nodebpy==520.34.0",
     "networkx==3.6.1",
 ]
 

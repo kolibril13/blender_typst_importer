@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+## v0.3.9
+
+* Update bundled nodebpy from 520.5.2 to 520.34.0, matching the CSV Importer extension so both no longer ship conflicting nodebpy versions.
+
 ## v0.3.6
 
 * Arrange generated Geometry Nodes and shader trees with NodeBpy's Sugiyama layout.

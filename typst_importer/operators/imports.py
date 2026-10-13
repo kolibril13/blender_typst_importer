@@ -1,6 +1,6 @@
 import bpy
 from bpy_extras.io_utils import ImportHelper
-from bpy.props import BoolProperty, StringProperty
+from bpy.props import BoolProperty, FloatProperty, StringProperty
 from pathlib import Path
 import time
 
@@ -30,6 +30,32 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         ),
         default=False,
     )
+    import_extruded: BoolProperty(
+        name="Import Extruded",
+        description="Extrude every imported element along the Z axis",
+        default=False,
+    )
+    extrude_depth: FloatProperty(
+        name="Extrude Depth",
+        description="Thickness toward the front (+Z); the back face stays at the origin",
+        default=0.04,
+        min=0.0,
+        soft_max=0.2,
+        step=0.1,
+        precision=3,
+        subtype="DISTANCE",
+    )
+    shade_auto_smooth: BoolProperty(
+        name="Shade Auto Smooth",
+        description="Add a Smooth by Angle modifier to every imported element",
+        default=False,
+    )
+    # Operator properties cannot point at a Material, so store its name.
+    custom_material: StringProperty(
+        name="Material",
+        description="Use this material for every imported element instead of the Typst colors",
+        default="",
+    )
 
     def execute(self, context):
         # Verify that the selected file is either a .txt or .typ file.
@@ -48,6 +74,9 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
         collection = typst_to_blender_curves(
             typst_file,
             allow_external_images=self.allow_external_images,
+            extrude=self.extrude_depth if self.import_extruded else 0.0,
+            shade_auto_smooth=self.shade_auto_smooth,
+            material=bpy.data.materials.get(self.custom_material),
         )
 
         elapsed_time_ms = (time.perf_counter() - start_time) * 1000
@@ -56,6 +85,16 @@ class ImportTypstOperator(bpy.types.Operator, ImportHelper):
             f" 🦢  Typst Importer: {typst_file.name} rendered in {elapsed_time_ms:.2f} ms as {collection.name}",
         )
         return {"FINISHED"}
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, "allow_external_images")
+        layout.prop(self, "import_extruded")
+        row = layout.row()
+        row.enabled = self.import_extruded
+        row.prop(self, "extrude_depth")
+        layout.prop(self, "shade_auto_smooth")
+        layout.prop_search(self, "custom_material", bpy.data, "materials")
 
     def invoke(self, context, event):
         # If the operator was invoked with a filepath (drag–n–drop), execute directly.

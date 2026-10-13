@@ -128,6 +128,51 @@ def test_typst_import_modes(kwargs, object_type, fill_mode):
         assert all(obj.data.fill_mode == fill_mode for obj in objects)
 
 
+@pytest.mark.parametrize("convert_to_mesh", [False, True])
+def test_typst_import_extruded_with_auto_smooth(convert_to_mesh):
+    collection = typst_express(
+        '#rect(width: 12pt, height: 12pt, fill: rgb("#336699"))',
+        name="pytest_extruded",
+        convert_to_mesh=convert_to_mesh,
+        extrude=0.05,
+        shade_auto_smooth=True,
+    )
+    bpy.context.view_layer.update()
+
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    objects = list(collection.objects)
+    assert objects
+    for obj in objects:
+        evaluated = obj.evaluated_get(depsgraph)
+        mesh = evaluated.to_mesh()
+        z_values = [vertex.co.z for vertex in mesh.vertices]
+        evaluated.to_mesh_clear()
+        # The back face sits on the origin and the depth extends to the front.
+        assert min(z_values) == pytest.approx(0.0, abs=1e-5)
+        assert max(z_values) == pytest.approx(0.05, abs=1e-5)
+        assert [modifier.type for modifier in obj.modifiers] == ["NODES"]
+
+
+@pytest.mark.parametrize("convert_to_mesh", [False, True])
+def test_typst_import_uses_custom_material(convert_to_mesh):
+    custom = bpy.data.materials.new("CustomTypstMaterial")
+    materials_before = set(bpy.data.materials)
+
+    collection = typst_express(
+        '#text(fill: red)[A] #text(fill: blue)[B]',
+        name="pytest_custom_material",
+        convert_to_mesh=convert_to_mesh,
+        material=custom,
+    )
+
+    objects = list(collection.objects)
+    assert objects
+    for obj in objects:
+        assert list(obj.data.materials) == [custom]
+    # The per-color materials the SVG importer generated are cleaned up.
+    assert set(bpy.data.materials) == materials_before
+
+
 def test_material_deduplication_preserves_unrelated_orphan_data():
     unrelated_material = bpy.data.materials.new("KeepThisMaterial")
     collection = bpy.data.collections.new("MaterialDedup")
@@ -168,7 +213,9 @@ def test_textbox_import_prepends_the_header_displayed_in_the_panel():
     bpy.context.window_manager.typst_custom_header = "#set text(size: 24pt)\n"
 
     operator = SimpleNamespace(
-        import_typst=lambda typst_file, _origin_to_char: fake_typst_import(typst_file),
+        import_typst=lambda typst_file, _origin_to_char, **_options: fake_typst_import(
+            typst_file
+        ),
         report=lambda _level, _message: None,
     )
     result = textbox_import.ImportFromTextboxOperator.execute(operator, bpy.context)

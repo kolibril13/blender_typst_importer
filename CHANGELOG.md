@@ -4,6 +4,13 @@
 
 ## Unreleased
 
+## v0.3.10
+
+* Add an "Import Extruded" option with an adjustable depth that extrudes every imported element toward the front (+Z), keeping the origin on the back face.
+* Add a "Shade Auto Smooth" option that gives every imported element a Smooth by Angle modifier.
+* Add a "Material" option to apply one custom material to every imported element instead of the Typst colors.
+* Fix broken fills in glyphs whose outlines overlap or cross themselves (e.g. "g" and "n" in STIX Two Text) by merging them with skia-pathops before import.
+
 ## v0.3.9
 
 * Update bundled nodebpy from 520.5.2 to 520.34.0, matching the CSV Importer extension so both no longer ship conflicting nodebpy versions.

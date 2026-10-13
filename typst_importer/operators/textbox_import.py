@@ -26,6 +26,13 @@ class ImportFromTextboxOperator(bpy.types.Operator):
         wm = context.window_manager
         use_custom_header = getattr(wm, "typst_use_custom_header", False)
         origin_to_char = getattr(wm, "typst_origin_to_char", False)
+        extrude = (
+            getattr(wm, "typst_extrude_depth", 0.0)
+            if getattr(wm, "typst_import_extruded", False)
+            else 0.0
+        )
+        shade_auto_smooth = getattr(wm, "typst_shade_auto_smooth", False)
+        material = getattr(context.scene, "typst_custom_material", None)
 
         # Apply custom header if checkbox is checked
         if use_custom_header:
@@ -44,7 +51,13 @@ class ImportFromTextboxOperator(bpy.types.Operator):
 
         # Import based on subclass implementation
         try:
-            collection = self.import_typst(temp_file, origin_to_char)
+            collection = self.import_typst(
+                temp_file,
+                origin_to_char,
+                extrude=extrude,
+                shade_auto_smooth=shade_auto_smooth,
+                material=material,
+            )
             elapsed_time_ms = (time.perf_counter() - start_time) * 1000
             self.report(
                 {"INFO"},
@@ -59,7 +72,14 @@ class ImportFromTextboxOperator(bpy.types.Operator):
             if temp_file.exists():
                 temp_file.unlink()
 
-    def import_typst(self, typst_file: Path, origin_to_char: bool = False):
+    def import_typst(
+        self,
+        typst_file: Path,
+        origin_to_char: bool = False,
+        extrude: float = 0.0,
+        shade_auto_smooth: bool = False,
+        material=None,
+    ):
         """Override in subclasses to specify import type"""
         raise NotImplementedError
 
@@ -69,11 +89,21 @@ class ImportFromTextboxAsCurveOperator(ImportFromTextboxOperator):
     bl_idname = "import_scene.import_textbox_curve"
     bl_label = "Import from Textbox as Curve"
 
-    def import_typst(self, typst_file: Path, origin_to_char: bool = False):
+    def import_typst(
+        self,
+        typst_file: Path,
+        origin_to_char: bool = False,
+        extrude: float = 0.0,
+        shade_auto_smooth: bool = False,
+        material=None,
+    ):
         return typst_to_blender_curves(
             typst_file,
             convert_to_mesh=False,
             origin_to_char=origin_to_char,
+            extrude=extrude,
+            shade_auto_smooth=shade_auto_smooth,
+            material=material,
         )
 
 
@@ -82,11 +112,21 @@ class ImportFromTextboxAsMeshOperator(ImportFromTextboxOperator):
     bl_idname = "import_scene.import_textbox_mesh"
     bl_label = "Import from Textbox as Mesh"
 
-    def import_typst(self, typst_file: Path, origin_to_char: bool = False):
+    def import_typst(
+        self,
+        typst_file: Path,
+        origin_to_char: bool = False,
+        extrude: float = 0.0,
+        shade_auto_smooth: bool = False,
+        material=None,
+    ):
         return typst_to_blender_curves(
             typst_file,
             convert_to_mesh=True,
             origin_to_char=origin_to_char,
+            extrude=extrude,
+            shade_auto_smooth=shade_auto_smooth,
+            material=material,
         )
 
 
@@ -95,7 +135,14 @@ class ImportFromTextboxAsGreasePencilOperator(ImportFromTextboxOperator):
     bl_idname = "import_scene.import_textbox_grease_pencil"
     bl_label = "Import from Textbox as Grease Pencil"
 
-    def import_typst(self, typst_file: Path, origin_to_char: bool = False):
+    def import_typst(
+        self,
+        typst_file: Path,
+        origin_to_char: bool = False,
+        extrude: float = 0.0,
+        shade_auto_smooth: bool = False,
+        material=None,
+    ):
         return typst_to_blender_curves(
             typst_file,
             convert_to_mesh=False,
@@ -109,10 +156,20 @@ class ImportFromTextboxAsUnfilledCurveOperator(ImportFromTextboxOperator):
     bl_idname = "import_scene.import_textbox_unfilled_curve"
     bl_label = "Import from Textbox as Unfilled Curve"
 
-    def import_typst(self, typst_file: Path, origin_to_char: bool = False):
+    def import_typst(
+        self,
+        typst_file: Path,
+        origin_to_char: bool = False,
+        extrude: float = 0.0,
+        shade_auto_smooth: bool = False,
+        material=None,
+    ):
         return typst_to_blender_curves(
             typst_file,
             convert_to_mesh=False,
             convert_to_unfilled_path=True,
             origin_to_char=origin_to_char,
+            extrude=extrude,
+            shade_auto_smooth=shade_auto_smooth,
+            material=material,
         )

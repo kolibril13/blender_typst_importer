@@ -2,6 +2,7 @@ from pathlib import Path
 import tempfile
 from typing import Optional, Tuple
 import importlib
+import math
 import os
 
 from mathutils import Matrix
@@ -398,6 +399,56 @@ def _convert_to_meshes(collection: bpy.types.Collection) -> None:
         if curve_data not in used_curve_data:
             bpy.data.curves.remove(curve_data)
 
+def _assign_material(
+    collection: bpy.types.Collection, material: bpy.types.Material
+) -> None:
+    """Replace the generated Typst colors with one material on every curve."""
+    for obj in collection.objects:
+        if obj.type != "CURVE":
+            continue
+        obj.data.materials.clear()
+        obj.data.materials.append(material)
+
+
+def _extrude_curves(collection: bpy.types.Collection, depth: float) -> None:
+    """Extrude every curve in the collection toward the front (+Z).
+
+    The back face stays on the origin plane (z = 0) and the front face ends up
+    at z = ``depth``. Converting to a mesh afterwards bakes the extrusion.
+    """
+    for obj in collection.objects:
+        if obj.type != "CURVE":
+            continue
+        # setup_object scales point radii along with the geometry, and Blender
+        # multiplies the extrusion by the radius. Reset them so ``depth`` is in
+        # scene units.
+        for spline in obj.data.splines:
+            points = spline.bezier_points if spline.type == "BEZIER" else spline.points
+            points.foreach_set("radius", [1.0] * len(points))
+        # Blender extrudes curves symmetrically, so extrude half the depth and
+        # shift the curve forward by the other half.
+        obj.data.extrude = depth / 2
+        obj.data.transform(Matrix.Translation((0.0, 0.0, depth / 2)))
+
+
+def _shade_auto_smooth(objects, angle: float = math.radians(30)) -> None:
+    """Add Blender's "Smooth by Angle" modifier to the given objects."""
+    objects = [obj for obj in objects if obj.type in ("CURVE", "MESH")]
+    if not objects:
+        return
+    # Like object.convert, this acts on every selected editable object, so
+    # override the selection with exactly the imported objects.
+    with bpy.context.temp_override(
+        object=objects[0],
+        active_object=objects[0],
+        selected_objects=objects,
+        selected_editable_objects=objects,
+    ):
+        result = bpy.ops.object.shade_auto_smooth(angle=angle)
+    if result != {"FINISHED"}:
+        raise RuntimeError("Failed to apply Shade Auto Smooth")
+
+
 def _convert_to_unfilled_paths(collection: bpy.types.Collection) -> None:
     
     """Helper function to convert curves to unfilled paths."""
@@ -681,6 +732,9 @@ def typst_to_blender_curves(
     use_grease_pencil: bool = False,
     grease_pencil_stroke_radius: float = DEFAULT_GREASE_PENCIL_STROKE_RADIUS,
     allow_external_images: bool = False,
+    extrude: float = 0.0,
+    shade_auto_smooth: bool = False,
+    material: Optional[bpy.types.Material] = None,
 ) -> bpy.types.Collection:
     """
     Compile a .txt or .typ file to an SVG using Typst,
@@ -699,6 +753,16 @@ def typst_to_blender_curves(
         grease_pencil_stroke_radius (float, optional): Initial value for the editable Stroke Radius Geometry Nodes input. Defaults to 0.01.
         allow_external_images (bool, optional): Allow image references outside
             the Typst source folder. Keep disabled for untrusted documents.
+        extrude (float, optional): Extrude every curve toward +Z by this
+            thickness, keeping the back face at the origin. Ignored for
+            Grease Pencil. Defaults to 0.0.
+        shade_auto_smooth (bool, optional): Add a "Smooth by Angle" modifier
+            to every imported curve or mesh. Ignored for Grease Pencil.
+            Defaults to False.
+        material (Optional[bpy.types.Material], optional): Use this material
+            for every imported curve or mesh instead of the Typst colors.
+            Image planes keep their own material. Ignored for Grease Pencil.
+            Defaults to None.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender objects.
@@ -764,7 +828,10 @@ def typst_to_blender_curves(
                 obj.name = "n" + obj.name[5:]
             setup_object(obj, scale_factor)
 
-        deduplicate_materials(imported_collection)
+        if material is not None and not use_grease_pencil:
+            _assign_material(imported_collection, material)
+        else:
+            deduplicate_materials(imported_collection)
         _remove_unused_svg_materials(import_state)
 
         if join_curves and sum(
@@ -775,6 +842,14 @@ def typst_to_blender_curves(
         if origin_to_char:
             _set_origins_to_geometry(imported_collection)
 
+        # Curve objects are converted in place, so these stay valid after
+        # mesh conversion. Image planes are deliberately left out.
+        vector_objects = [
+            obj for obj in imported_collection.objects if obj.type == "CURVE"
+        ]
+        if extrude and not use_grease_pencil:
+            _extrude_curves(imported_collection, extrude)
+
         if use_grease_pencil:
             _convert_to_grease_pencil(
                 imported_collection,
@@ -784,6 +859,9 @@ def typst_to_blender_curves(
             _convert_to_meshes(imported_collection)
         elif convert_to_unfilled_path:
             _convert_to_unfilled_paths(imported_collection)
+
+        if shade_auto_smooth and not use_grease_pencil:
+            _shade_auto_smooth(vector_objects)
 
         # Position the collection if coordinates are provided.
         if position is not None:
@@ -820,6 +898,9 @@ def typst_express(
     use_grease_pencil: bool = False,
     grease_pencil_stroke_radius: float = DEFAULT_GREASE_PENCIL_STROKE_RADIUS,
     allow_external_images: bool = False,
+    extrude: float = 0.0,
+    shade_auto_smooth: bool = False,
+    material: Optional[bpy.types.Material] = None,
 ) -> bpy.types.Collection:
     """
     Create Blender objects from Typst content.
@@ -840,6 +921,16 @@ def typst_express(
         grease_pencil_stroke_radius (float, optional): Initial value for the editable Stroke Radius Geometry Nodes input. Defaults to 0.01.
         allow_external_images (bool, optional): Allow image references outside
             the Typst source folder. Defaults to False.
+        extrude (float, optional): Extrude every curve toward +Z by this
+            thickness, keeping the back face at the origin. Ignored for
+            Grease Pencil. Defaults to 0.0.
+        shade_auto_smooth (bool, optional): Add a "Smooth by Angle" modifier
+            to every imported curve or mesh. Ignored for Grease Pencil.
+            Defaults to False.
+        material (Optional[bpy.types.Material], optional): Use this material
+            for every imported curve or mesh instead of the Typst colors.
+            Image planes keep their own material. Ignored for Grease Pencil.
+            Defaults to None.
 
     Returns:
         bpy.types.Collection: The collection of imported Blender objects.
@@ -867,6 +958,9 @@ def typst_express(
         show_indices=show_indices,
         grease_pencil_stroke_radius=grease_pencil_stroke_radius,
         allow_external_images=allow_external_images,
+        extrude=extrude,
+        shade_auto_smooth=shade_auto_smooth,
+        material=material,
     )
     collection.name = name
 

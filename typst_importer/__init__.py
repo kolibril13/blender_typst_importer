@@ -70,6 +70,38 @@ bpy.types.WindowManager.typst_origin_to_char = bpy.props.BoolProperty(
     default=True,
 )
 
+# Properties for extruded import
+bpy.types.WindowManager.typst_import_extruded = bpy.props.BoolProperty(
+    name="Import Extruded",
+    description="Extrude every imported element along the Z axis",
+    default=False,
+)
+
+bpy.types.WindowManager.typst_extrude_depth = bpy.props.FloatProperty(
+    name="Extrude Depth",
+    description="Thickness toward the front (+Z); the back face stays at the origin",
+    default=0.04,
+    min=0.0,
+    soft_max=0.2,
+    step=0.1,
+    precision=3,
+    subtype="DISTANCE",
+)
+
+# Property for shade auto smooth option
+bpy.types.WindowManager.typst_shade_auto_smooth = bpy.props.BoolProperty(
+    name="Shade Auto Smooth",
+    description="Add a Smooth by Angle modifier to every imported element",
+    default=False,
+)
+
+# Property for a material applied to every imported element
+bpy.types.Scene.typst_custom_material = bpy.props.PointerProperty(
+    name="Custom Material",
+    description="Use this material for every imported element instead of the Typst colors",
+    type=bpy.types.Material,
+)
+
 # Property for custom header checkbox
 bpy.types.WindowManager.typst_use_custom_header = bpy.props.BoolProperty(
     name="Use Custom Header",
@@ -117,6 +149,15 @@ class VIEW3D_PT_typst_textbox_import(bpy.types.Panel):
 
         # Origin to character option
         options_box.prop(wm, "typst_origin_to_char", text="Origin to Character")
+
+        # Extrusion and smoothing options
+        row = options_box.row(align=True)
+        row.prop(wm, "typst_import_extruded", text="Import Extruded")
+        sub = row.row(align=True)
+        sub.enabled = wm.typst_import_extruded
+        sub.prop(wm, "typst_extrude_depth", text="Depth")
+        options_box.prop(wm, "typst_shade_auto_smooth", text="Shade Auto Smooth")
+        options_box.prop(scene, "typst_custom_material", text="Material")
 
         # Custom header option
         options_box.prop(wm, "typst_use_custom_header", text="Use Custom Header")

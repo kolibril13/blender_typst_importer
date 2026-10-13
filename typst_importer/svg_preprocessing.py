@@ -2,7 +2,8 @@ from lxml import etree
 import copy
 import math
 import re
-from svg.path import parse_path
+import pathops
+from svg.path import Arc, Close, CubicBezier, Line, Move, QuadraticBezier, parse_path
 
 # SVG namespace used throughout.
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -576,6 +577,128 @@ def stroke_to_filled_path(svg_content):
     return etree.tostring(root, encoding="unicode", pretty_print=True)
 
 
+def _effective_attribute(element, name, default):
+    """Return an inherited presentation attribute such as ``fill-rule``."""
+    while element is not None and isinstance(element.tag, str):
+        value = element.get(name)
+        if value is not None and value.strip().lower() != "inherit":
+            return value.strip().lower()
+        element = element.getparent()
+    return default
+
+
+def _point(value):
+    return (value.real, value.imag)
+
+
+def _svg_d_to_skia_path(d_attr):
+    """Convert SVG path data to a skia Path, or None if it cannot be mapped."""
+    path = pathops.Path()
+    pen = path.getPen()
+    contour_open = False
+    for segment in parse_path(d_attr):
+        if isinstance(segment, Move):
+            if contour_open:
+                pen.closePath()
+            pen.moveTo(_point(segment.end))
+            contour_open = True
+        elif isinstance(segment, (Line, Close)):
+            pen.lineTo(_point(segment.end))
+        elif isinstance(segment, CubicBezier):
+            pen.curveTo(
+                _point(segment.control1),
+                _point(segment.control2),
+                _point(segment.end),
+            )
+        elif isinstance(segment, QuadraticBezier):
+            pen.qCurveTo(_point(segment.control), _point(segment.end))
+        else:
+            # Arcs (and anything unknown) are left to Blender's importer.
+            return None
+        if isinstance(segment, Close):
+            pen.closePath()
+            contour_open = False
+    if contour_open:
+        pen.closePath()
+    return path
+
+
+def _format_number(value):
+    text = f"{value:.4f}".rstrip("0").rstrip(".")
+    return "0" if text in ("", "-0") else text
+
+
+def _skia_path_to_svg_d(path):
+    """Serialize a skia Path to absolute SVG path data."""
+    commands = []
+
+    def xy(point):
+        return f"{_format_number(point[0])} {_format_number(point[1])}"
+
+    for verb, points in path.segments:
+        if verb == "moveTo":
+            commands.append(f"M {xy(points[0])}")
+        elif verb == "lineTo":
+            commands.append(f"L {xy(points[0])}")
+        elif verb == "curveTo":
+            commands.append("C " + " ".join(xy(point) for point in points))
+        elif verb == "qCurveTo":
+            # TrueType-style runs of off-curve points have implied on-curve
+            # points halfway between consecutive off-curve points.
+            *off_curve, end = points
+            for index, control in enumerate(off_curve):
+                if index + 1 < len(off_curve):
+                    following = off_curve[index + 1]
+                    on_curve = (
+                        (control[0] + following[0]) / 2,
+                        (control[1] + following[1]) / 2,
+                    )
+                else:
+                    on_curve = end
+                commands.append(f"Q {xy(control)} {xy(on_curve)}")
+        elif verb == "closePath":
+            commands.append("Z")
+    return " ".join(commands)
+
+
+def remove_fill_overlaps(svg_content):
+    """
+    Merge overlapping and self-intersecting contours of filled paths.
+
+    Fonts often draw glyphs from overlapping contours (e.g. the stem and arch
+    of an "n"). SVG renderers resolve those with the nonzero fill rule, but
+    Blender fills curves even-odd, which leaves holes and broken triangles.
+    Simplifying each path into non-overlapping contours renders the same
+    under both rules.
+    """
+    root = parse_svg_string(svg_content)
+    for path_elem in root.xpath(".//svg:path", namespaces=NS_MAP):
+        d_attr = path_elem.get("d")
+        if not d_attr:
+            continue
+        if _effective_attribute(path_elem, "fill", "black") == "none":
+            continue
+        try:
+            path = _svg_d_to_skia_path(d_attr)
+            if path is None:
+                continue
+            fill_rule = _effective_attribute(path_elem, "fill-rule", "nonzero")
+            path.fillType = (
+                pathops.FillType.EVEN_ODD
+                if fill_rule == "evenodd"
+                else pathops.FillType.WINDING
+            )
+            path.simplify()
+        except Exception as error:
+            # Keep the original path rather than failing the whole import.
+            print(f"Typst SVG: could not remove overlaps from a path: {error}")
+            continue
+        path_elem.set("d", _skia_path_to_svg_d(path))
+        path_elem.set("fill-rule", "nonzero")
+
+    return etree.tostring(root, encoding="unicode", pretty_print=True)
+
+
 # def convert_text_to_paths(svg_content):
 #     """
 #     Converts all text elements in the SVG to path elements.
@@ -587,14 +710,16 @@ def stroke_to_filled_path(svg_content):
 
 def preprocess_svg(svg_content):
     """
-    Performs a three-step preprocessing on the SVG content:
+    Preprocesses the SVG content in these steps:
       1. Flattens the SVG by inlining symbols (via flatten_svg).
       2. Converts text elements to path elements (via convert_text_to_paths).
       3. Converts stroked paths into filled outline paths (via stroke_to_filled_path).
+      4. Merges overlapping contours of filled paths (via remove_fill_overlaps).
 
     Returns the fully processed SVG content as a string.
     """
     svg_processed = flatten_svg(svg_content)
     # svg_processed = convert_text_to_paths(svg_processed) # not yet ready for use
     svg_processed = stroke_to_filled_path(svg_processed)
+    svg_processed = remove_fill_overlaps(svg_processed)
     return svg_processed

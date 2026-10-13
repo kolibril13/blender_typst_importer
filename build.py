@@ -30,6 +30,7 @@ required_packages = [
     "lxml",
     "nodebpy==520.34.0",
     "networkx==3.6.1",
+    "skia-pathops==0.9.2",
 ]
 
 def run_python(args: str | List[str]):

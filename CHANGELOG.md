@@ -4,6 +4,12 @@
 
 ## Unreleased
 
+## v0.3.11
+
+* Verify compatibility with Blender 5.3 and add it to the CI test matrix.
+* Update bundled typst from 0.15.0 to 0.15.2, databpy from 0.10.0 to 0.12.0, lxml from 6.0.2 to 6.1.3, and svg.path from 7.0 to 7.1.
+* Stop using the deprecated `Material.use_nodes` property, which Blender 6.0 will remove.
+
 ## v0.3.10
 
 * Add an "Import Extruded" option with an adjustable depth that extrudes every imported element toward the front (+Z), keeping the origin on the back face.

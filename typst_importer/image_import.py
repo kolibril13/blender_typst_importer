@@ -935,7 +935,6 @@ def _create_image_material(image, use_emission):
     mat = bpy.data.materials.new(name=f"MatImg_{image.name}")
     mat["typst_svg_image_material"] = True
     mat["typst_svg_use_emission"] = bool(use_emission)
-    mat.use_nodes = True
     mat.blend_method = "BLEND"
     if hasattr(mat, "surface_render_method"):
         mat.surface_render_method = "BLENDED"
@@ -1067,7 +1066,7 @@ def _remove_image_plane(obj):
     materials = {material for material in mesh.materials if material is not None}
     images = set()
     for material in materials:
-        if not material.use_nodes or material.node_tree is None:
+        if material.node_tree is None:
             continue
         for node in material.node_tree.nodes:
             image = getattr(node, "image", None)

@@ -111,7 +111,7 @@ def _rollback_svg_import_state(before) -> None:
             )
 
     for material in owned_materials:
-        if not material.use_nodes or material.node_tree is None:
+        if material.node_tree is None:
             continue
         for node in material.node_tree.nodes:
             image = getattr(node, "image", None)
@@ -243,7 +243,6 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     # color used by Blender 5.2 when converting a Curve material to a native
     # Grease Pencil material.
     mat.diffuse_color = color
-    mat.use_nodes = True
     mat.blend_method = "BLEND"
 
     mat.node_tree.nodes.clear()
@@ -683,7 +682,6 @@ def add_indices_to_collection(imported_collection):
                 )  # White with some transparency
 
                 # Set up material for transparency
-                bg_mat.use_nodes = True
                 bg_mat.node_tree.nodes.clear()
                 with s.tree(bg_mat.node_tree, arrange="sugiyama") as tree:
                     principled = s.PrincipledBSDF(

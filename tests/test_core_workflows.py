@@ -1,4 +1,4 @@
-"""Blender 5.2 coverage for import and Geometry Nodes utility workflows."""
+"""Coverage (Blender 5.2+) for import and Geometry Nodes utility workflows."""
 
 from __future__ import annotations
 

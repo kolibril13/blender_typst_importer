@@ -1,4 +1,4 @@
-"""Blender 5.2 coverage for SVG raster images produced by Typst."""
+"""Coverage (Blender 5.2+) for SVG raster images produced by Typst."""
 
 from __future__ import annotations
 

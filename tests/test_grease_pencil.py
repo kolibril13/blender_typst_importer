@@ -1,4 +1,4 @@
-"""Blender 5.2 coverage for native Typst Grease Pencil conversion."""
+"""Coverage (Blender 5.2+) for native Typst Grease Pencil conversion."""
 
 from __future__ import annotations
 

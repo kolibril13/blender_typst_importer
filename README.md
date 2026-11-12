@@ -1,6 +1,8 @@
 # Blender Typst Importer
 
 A Blender extension to render Typst files.
+
+Requires Blender 5.3 or newer and uses nodebpy 530.0.1.
 ![thumbnail](https://github.com/user-attachments/assets/c9877b35-a0f3-4bbd-8de3-4a849292d0b3)
 
 ## Tutorials:
@@ -25,7 +27,7 @@ from bl_ext.blender_org.typst_importer.typst_to_svg import typst_express
 typst_express("$ a = b/c $")
 ```
 
-Import as native Blender 5.2 Grease Pencil objects:
+Import as native Blender Grease Pencil objects:
 
 ```py
 typst_express("$ a = b/c $", use_grease_pencil=True)

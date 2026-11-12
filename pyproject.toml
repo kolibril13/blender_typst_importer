@@ -4,7 +4,7 @@ version = "0.0.1"  # Placeholder; the real version is defined in blender_manifes
 description = "Blender extension to render Typst files"
 license = { text = "GPL-3.0-or-later" }
 readme = "README.md"
-dependencies = ["typst", "svg.path", "lxml", "databpy>=0.10.0", "nodebpy==520.34.0", "networkx==3.6.1", "skia-pathops==0.9.2"]
+dependencies = ["typst", "svg.path", "lxml", "databpy>=0.10.0", "nodebpy==530.0.1", "networkx==3.6.1", "skia-pathops==0.9.2"]
 requires-python = ">=3.13.0"
 keywords = ["blender", "python", "typst"]
 maintainers = [
@@ -17,7 +17,7 @@ Repository = "https://github.com/kolibril13/blender_typst_importer"
 # Documentation = "https://kolibril13.github.io/blender_typst_importer"
 
 [project.optional-dependencies]
-bpy = ["bpy>=4.2"]
+bpy = ["bpy>=5.3"]
 test = ["pytest", "pytest-cov"]
 dev = ["fake-bpy-module", "tomlkit"]
 docs = ["jupyter"]

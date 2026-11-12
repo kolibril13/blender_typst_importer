@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+## v0.3.12
+
+* Require Blender 5.3 or newer and build releases with Blender 5.3.
+* Update bundled nodebpy from 520.34.0 to 530.0.1.
+
 ## v0.3.11
 
 * Verify compatibility with Blender 5.3 and add it to the CI test matrix.

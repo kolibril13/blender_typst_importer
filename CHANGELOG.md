@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+## v0.3.14
+
 * Fix stroked frames (e.g. a boxed code block) importing as a solid slab instead of an outline, which hid every black glyph inside them.
 
 ## v0.3.13

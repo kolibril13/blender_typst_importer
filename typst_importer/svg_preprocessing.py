@@ -623,6 +623,96 @@ def _svg_d_to_skia_path(d_attr):
     return path
 
 
+def _contours(path):
+    """Split a skia path into contours of ``(verb, points)`` segments."""
+    contour = []
+    for segment in path.segments:
+        if segment[0] == "moveTo" and contour:
+            yield contour
+            contour = []
+        contour.append(segment)
+    if contour:
+        yield contour
+
+
+def _same_point(first, second, tolerance):
+    return (
+        abs(first[0] - second[0]) <= tolerance
+        and abs(first[1] - second[1]) <= tolerance
+    )
+
+
+def _spike_tolerance(points):
+    """A length below which two points of a contour are the same corner.
+
+    The sliver left at a seam is thinner than the outline by orders of
+    magnitude, so the tolerance scales with the contour instead of being a
+    fixed distance that would be too coarse for a glyph and too fine for a
+    page-sized frame.
+    """
+    xs = [x for x, _ in points]
+    ys = [y for _, y in points]
+    return max(max(xs) - min(xs), max(ys) - min(ys)) * 1e-5
+
+
+def _polygon_without_spikes(points, tolerance):
+    """Drop repeated points and vertices that double back on themselves."""
+    cleaned = []
+    for point in points:
+        if cleaned and _same_point(cleaned[-1], point, tolerance):
+            continue
+        cleaned.append(point)
+        while len(cleaned) >= 3 and _same_point(cleaned[-3], cleaned[-1], tolerance):
+            del cleaned[-2:]
+
+    # The contour is cyclic, so a spike can also straddle its seam.
+    changed = True
+    while changed and len(cleaned) >= 3:
+        changed = False
+        if _same_point(cleaned[0], cleaned[-1], tolerance):
+            cleaned.pop()
+            changed = True
+        elif _same_point(cleaned[1], cleaned[-1], tolerance):
+            cleaned.pop(0)
+            cleaned.pop()
+            changed = True
+        elif len(cleaned) >= 4 and _same_point(cleaned[0], cleaned[-2], tolerance):
+            cleaned.pop()
+            changed = True
+    return cleaned
+
+
+def _drop_zero_area_spikes(path):
+    """Remove the zero-width slivers a simplified stroke outline keeps.
+
+    ``Path.simplify`` closes the outline of a stroked loop with a vertex that
+    doubles back on itself. The sliver covers no area, so SVG renderers draw
+    the outline correctly, but Blender's curve fill leaves the whole contour
+    empty - a boxed code block imports as a solid slab instead of a frame.
+    Only straight-line contours are rewritten; glyph outlines keep their
+    curves untouched.
+    """
+    cleaned = pathops.Path()
+    pen = cleaned.getPen()
+    for contour in _contours(path):
+        verbs = {verb for verb, _ in contour}
+        if not verbs <= {"moveTo", "lineTo", "closePath"}:
+            for verb, points in contour:
+                getattr(pen, verb)(*points)
+            continue
+        points = [points[0] for verb, points in contour if verb != "closePath"]
+        if not points:
+            continue
+        points = _polygon_without_spikes(points, _spike_tolerance(points))
+        if len(points) < 3:
+            continue
+        pen.moveTo(points[0])
+        for point in points[1:]:
+            pen.lineTo(point)
+        pen.closePath()
+    return cleaned
+
+
 def _format_number(value):
     text = f"{value:.4f}".rstrip("0").rstrip(".")
     return "0" if text in ("", "-0") else text
@@ -689,6 +779,7 @@ def remove_fill_overlaps(svg_content):
                 else pathops.FillType.WINDING
             )
             path.simplify()
+            path = _drop_zero_area_spikes(path)
         except Exception as error:
             # Keep the original path rather than failing the whole import.
             print(f"Typst SVG: could not remove overlaps from a path: {error}")

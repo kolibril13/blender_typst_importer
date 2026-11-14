@@ -11,6 +11,8 @@ import pytest
 
 from typst_importer.typst_to_svg import typst_express
 from typst_importer.svg_preprocessing import (
+    _polygon_without_spikes,
+    _spike_tolerance,
     _svg_d_to_skia_path,
     remove_fill_overlaps,
 )
@@ -124,3 +126,31 @@ def test_overlapping_contours_import_with_the_rendered_area(contours, nonzero_ar
 
     # The imported mesh must cover what Typst renders with the nonzero rule.
     assert shape_area / square_area == pytest.approx(nonzero_area / 100, rel=1e-3)
+
+
+def test_seam_slivers_are_dropped_from_a_contour():
+    """A simplified stroke outline doubles back on itself where it closes."""
+    square = [(0.0, 0.0), (10.0, 0.0), (10.0, 10.0), (0.0, 10.0)]
+    # The seam leaves a sliver: a tip below the square, reached and left
+    # through two corners a fraction of the outline apart.
+    with_sliver = [(0.0, -3.0)] + square + [(1e-4, 0.0), (0.0, -3.0)]
+
+    cleaned = _polygon_without_spikes(with_sliver, _spike_tolerance(with_sliver))
+
+    assert cleaned == square
+
+
+def test_rounded_stroked_frame_imports_as_a_frame_not_a_slab():
+    """A boxed code block is a stroke; Blender must fill its outline only."""
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    square_area = _imported_mesh_area(_typst_curve(SQUARE))
+    frame_area = _imported_mesh_area(
+        "#rect(width: 20pt, height: 10pt, radius: 4pt, stroke: 2pt + black, fill: none)"
+    )
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+
+    # A 2pt stroke along the 53.1pt centre line of the rounded border covers
+    # about 106 units, a few percent more once the corners are flattened. The
+    # sliver at the seam used to cost the outline its fill, leaving only the
+    # inner contour as a solid 142.
+    assert frame_area / square_area == pytest.approx(106.3 / 100, rel=0.05)

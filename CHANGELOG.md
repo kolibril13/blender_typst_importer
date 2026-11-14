@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+* Fix stroked frames (e.g. a boxed code block) importing as a solid slab instead of an outline, which hid every black glyph inside them.
+
 ## v0.3.13
 
 * Fix a `TypeError` when importing any Typst content, caused by nodebpy 530 renaming the Mix Shader's `Fac` socket to `factor`.

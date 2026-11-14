@@ -249,7 +249,7 @@ def create_material(color, name: str = "") -> bpy.types.Material:
     with s.tree(mat.node_tree, arrange="sugiyama") as tree:
         opacity = s.Attribute.object("opacity")
         mixed = s.MixShader(
-            fac=opacity.o.fac,
+            factor=opacity.o.factor,
             shader=s.TransparentBSDF(),
             shader_001=s.Emission(color=color, strength=1.0),
         )

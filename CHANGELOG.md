@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+## v0.3.13
+
+* Fix a `TypeError` when importing any Typst content, caused by nodebpy 530 renaming the Mix Shader's `Fac` socket to `factor`.
+
 ## v0.3.12
 
 * Require Blender 5.3 or newer and build releases with Blender 5.3.

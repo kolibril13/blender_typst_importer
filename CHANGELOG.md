@@ -4,6 +4,11 @@
 
 ## Unreleased
 
+## v0.3.15
+
+* Update bundled nodebpy from 530.0.1 to 530.0.3.
+* Update bundled databpy from 0.12.0 to 0.13.0.
+
 ## v0.3.14
 
 * Fix stroked frames (e.g. a boxed code block) importing as a solid slab instead of an outline, which hid every black glyph inside them.

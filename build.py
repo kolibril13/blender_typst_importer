@@ -28,7 +28,7 @@ required_packages = [
     "databpy",
     "svg.path",
     "lxml",
-    "nodebpy==530.0.1",
+    "nodebpy==530.0.3",
     "networkx==3.6.1",
     "skia-pathops==0.9.2",
 ]
